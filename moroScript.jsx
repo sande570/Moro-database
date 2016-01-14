@@ -74,51 +74,95 @@
         //iterate over morphemes; if there is a verb root, add pre-dashes to suffixes and post-dashes to prefixes: 
         //example: g-a-s-o; clg-rtc-eat.rt-pfv = [g-, a-, s, -o]; [clg-, rtc-, eat.rt, -pfv]
         for (var i = 0; i < glosses.length; i++) {
-          var gloss = glosses[i];
-          var morpheme = morphemes[i];
+          var gloss = removePunc(glosses[i].toLowerCase());
+          var morpheme = removePunc(morphemes[i].toLowerCase());
           if (rootindex==-1) {
-            results.push({moroword:morpheme, definition:gloss});
+            results.push({moroword:[morpheme], definition:gloss});
           } else {
-            if (i < rootindex) {
-              gloss = gloss+'-';
+            if (i < rootindex) { 
+             gloss = gloss+'-';
               morpheme = morpheme+'-';
-              results.push({moroword:morpheme, definition:gloss});
+              results.push({moroword:[morpheme], definition:gloss});
             } else if (i > rootindex) {
               gloss = '-'+gloss;
               morpheme = '-'+morpheme;
-              results.push({moroword:morpheme, definition:gloss});
+              results.push({moroword:[morpheme], definition:gloss});
             } else {
-              results.push({moroword:morpheme, definition:gloss});
+              results.push({moroword:[morpheme], definition:gloss});
             }
           }
         }
         return results
       }
 
+    //merge two arrays and de-duplicate items
+    function arrayUnique(array) {
+        var a = array.concat();
+        for(var i=0; i<a.length; ++i) {
+            for(var j=i+1; j<a.length; ++j) {
+                if(a[i] === a[j])
+                    a.splice(j--, 1);
+            }
+        }
+
+        return a;
+    }
+
+    //Remove punctuation from string excluding dashes and period in word
+    function removePunc(word) {
+        var rtnWord = word.replace(/[,\/#?!\"\“$%\^&\*;:{}=_`~()]/g,"");
+        rtnWord = rtnWord.replace(/\b[.]+\B|\B[.]+\b/g, "");
+        return rtnWord;
+    }
+
+
       function processdata(dirtydata){
         var results = [];
         for (var i = 0; i < dirtydata.rows.length; i++) {
-          // split on spaces and remove punctuation from morphemes line
-          var sentence = dirtydata.rows[i].value.sentence; 
-          var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
-          var morphemes = presplit_morphemes.split(/[ ]/);
-          var gloss = sentence.gloss.split(/[ ]/);
-          if (gloss.length = morphemes.length) {
-            //process all morphemes and words
-            for (var ii = 0; ii < gloss.length; ii++) {
-              var morpheme = morphemes[ii]; 
-              var glossword = gloss[ii];
-              var wordresults = processword(morpheme, glossword);
-              results = results.concat(wordresults);
+            // split on spaces and remove punctuation from morphemes line
+            var sentence = dirtydata.rows[i].value.sentence; 
+            var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
+            var morphemes = presplit_morphemes.split(/[ ]/);
+            var gloss = sentence.gloss.split(/[ ]/);
+            if (gloss.length = morphemes.length) {
+                //process all morphemes and words
+                for (var ii = 0; ii < gloss.length; ii++) {
+                    var morpheme = morphemes[ii]; 
+                    var glossword = gloss[ii];
+                    var wordresults = processword(morpheme, glossword);
+                    var startIndex = 0;
+                    if (results.length == 0) {
+                        results = results.concat(wordresults[startIndex]);
+                        startIndex += 1;
+                    }
+                    for (var k = startIndex; k < wordresults.length; k++) {
+                        var existed = false;
+                        for (var j = 0; j < results.length; j++) {
+                            if (wordresults[k]["definition"] == results[j]["definition"]) {
+                                existed = true;
+                                oldMoroword = results[j]["moroword"];
+                                newMoroword = arrayUnique(oldMoroword.concat(wordresults[k]["moroword"]));
+                                results[j]["moroword"] = newMoroword;
+                                break;
+                            }       
+                        }
+                        if (!existed) {
+                           results = results.concat(wordresults[k]);
+                        }
+                    }
+                } 
             }
-          }
-
         }
-        //return morphemes/glosses by moro morphemes
-        return _.sortBy (results, function(j) {
-          return j.moroword;
-        })
-      }
+    //Print out result dict
+    console.log("*********")
+    console.log(JSON.stringify(results))
+    console.log("*********")
+    //return morphemes/glosses by moro morphemes
+    return _.sortBy (results, function(j) {
+      return j.moroword;
+    })
+}
+
       // This is a test for processing code
       function assert(expected_value, actual) {
         if (!_.isEqual(expected_value, actual)){
@@ -133,23 +177,24 @@
 
       function test_processdata() {
         var testcase1 = {rows:[{value:{sentence:{morphemes:'a', gloss:'A'}}}]};
-        assert([{moroword:'a', definition:'A'}], processdata(testcase1));
-        var testcase2 = {rows:[{value:{sentence: {morphemes:'a-b c', gloss:'A-B C'}}}]};
-        assert([{moroword:'a', definition:'A'}, {moroword:'b', definition:'B'}, {moroword:'c', definition:'C'}], processdata(testcase2));
+        assert([{moroword:['a'], definition:'a'}], processdata(testcase1));
+        var testcase2 = {rows:[{value:{sentence: {morphemes:'a-b d', gloss:'A-B A'}}}]};
+        //console.log(JSON.stringify(processdata(testcase2)));
+        assert([{moroword:['a','d'], definition:'a'}, {moroword:['b'], definition:'b'}], processdata(testcase2));
        var testcase3 = {rows:[{value:{sentence:{morphemes:'"loman-nǝŋ maj-anda l-a-fo,', gloss:'day-indef man-assoc.pl cll-rtc-past.aux'}}}]};
-        assert([{moroword:'a-', definition:'rtc-'},
-                {moroword:'anda', definition:'assoc.pl'},
-                {moroword:'fo', definition:'past.aux'},
-                {moroword:'l-', definition:'cll-'},
-                {moroword:'loman', definition:'day'}, 
-                {moroword:'maj', definition:'man'},
-                {moroword:'nǝŋ', definition:'indef'},
+        assert([{moroword:['a-'], definition:'rtc-'},
+                {moroword:['anda'], definition:'assoc.pl'},
+                {moroword:['fo'], definition:'past.aux'},
+                {moroword:['l-'], definition:'cll-'},
+                {moroword:['loman'], definition:'day'}, 
+                {moroword:['maj'], definition:'man'},
+                {moroword:['nǝŋ'], definition:'indef'},
                  ], processdata(testcase3));
         var testcase4 = {rows:[{value:{sentence:{morphemes:'"a,!?..', gloss:'A'}}}]};
-        assert([{moroword:'a', definition:'A'}], processdata(testcase4));
+        assert([{moroword:['a'], definition:'a'}], processdata(testcase4));
         var testcase5 = {rows:[{value:{sentence:{morphemes:'b-a c', gloss:'B-A C'}}}]};
-        assert([{moroword:'a', definition:'A'}, {moroword:'b', definition:'B'}, {moroword:'c', definition:'C'}], processdata(testcase5));
-      } 
+        assert([{moroword:['a'], definition:'a'}, {moroword:['b'], definition:'b'}, {moroword:['c'], definition:'c'}], processdata(testcase5));
+        } 
       test_processdata();
 
       // promise that resolves when sentence data is loaded and processed into morpheme dictionary
@@ -199,7 +244,7 @@
             return (
              <div>
                 //TODO: rendering all definitions is slow, so we only render 100 for now. Add pagination before rendering all. @HSande
-                Dictionary({this.state.data.length}): <DictList data={this.state.data.slice(0,100)}/>
+                Dictionary({this.state.data.length}): <DictList data={this.state.data.slice(0,10000)}/>
               </div>
             );
           }
