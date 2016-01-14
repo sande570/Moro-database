@@ -110,7 +110,7 @@
 
     //Remove punctuation from string excluding dashes and period in word
     function removePunc(word) {
-        var rtnWord = word.replace(/[,\/#?!\"\“$%\^&\*;:{}=_`~()]/g,"");
+        var rtnWord = word.replace(/[,\/#?!\"\“\”$%\^&\*;:{}=_`~()]/g,"");
         rtnWord = rtnWord.replace(/\b[.]+\B|\B[.]+\b/g, "");
         return rtnWord;
     }
@@ -154,9 +154,9 @@
             }
         }
     //Print out result dict
-    console.log("*********")
-    console.log(JSON.stringify(results))
-    console.log("*********")
+    //console.log("*********")
+    //console.log(JSON.stringify(results))
+    //console.log("*********")
     //return morphemes/glosses by moro morphemes
     return _.sortBy (results, function(j) {
       return j.moroword;
@@ -207,9 +207,9 @@
       var Definition = React.createClass({
         render: function() {
           return (
-            <div>
+            <div className="ui vertical segment">
               <h2>
-                {this.props.moroword}
+                {_.join(this.props.moroword, ", ")}
               </h2>
               {this.props.definition}
             </div>
@@ -241,9 +241,9 @@
         },
         render: function() {
           if (this.state.loaded) {
+            //TODO: rendering all definitions is slow, so we only render 10000 for now. Add pagination before rendering all. @HSande
             return (
              <div>
-                //TODO: rendering all definitions is slow, so we only render 100 for now. Add pagination before rendering all. @HSande
                 Dictionary({this.state.data.length}): <DictList data={this.state.data.slice(0,10000)}/>
               </div>
             );
