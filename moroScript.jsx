@@ -77,18 +77,18 @@
           var gloss = removePunc(glosses[i].toLowerCase());
           var morpheme = removePunc(morphemes[i].toLowerCase());
           if (rootindex==-1) {
-            results.push({moroword:[morpheme], definition:gloss});
+            results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
           } else {
             if (i < rootindex) { 
              gloss = gloss+'-';
               morpheme = morpheme+'-';
-              results.push({moroword:[morpheme], definition:gloss});
+              results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
             } else if (i > rootindex) {
               gloss = '-'+gloss;
               morpheme = '-'+morpheme;
-              results.push({moroword:[morpheme], definition:gloss});
+              results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
             } else {
-              results.push({moroword:[morpheme], definition:gloss});
+              results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
             }
           }
         }
@@ -100,8 +100,10 @@
         var a = array.concat();
         for(var i=0; i<a.length; ++i) {
             for(var j=i+1; j<a.length; ++j) {
-                if(a[i] === a[j])
+                if(a[i]["word"] === a[j]["word"]) {
                     a.splice(j--, 1);
+                    a[i]["count"] += 1 
+                }
             }
         }
 
@@ -155,8 +157,10 @@
         }
     //Print out result dict
     //console.log("*********")
-    //console.log(JSON.stringify(results))
-    //console.log("*********")
+    for(var i=0; i<results.length; ++i) {
+        console.log(JSON.stringify(results[i]))
+    }
+    console.log("DONE")
     //return morphemes/glosses by moro morphemes
     return _.sortBy (results, function(j) {
       return j.moroword;
