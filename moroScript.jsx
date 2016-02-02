@@ -117,6 +117,23 @@
         return rtnWord;
     }
 
+    //Process dict with count to sorted dict without count value
+    function sortAndRemoveCount(dict) {
+        var toRtn = JSON.parse(JSON.stringify(dict));
+        for(var i=0; i<toRtn.length; ++i) {
+            toRtn[i]["moroword"].sort(function(a, b) {
+                return parseFloat(b["count"]) - parseFloat(a["count"]);
+            });
+            var moroWordsArray = []
+            for (var j=0; j<toRtn[i]["moroword"].length; ++j) {
+                delete toRtn[i]["moroword"][j]["count"]
+                var word = toRtn[i]["moroword"][j]["word"]
+                moroWordsArray.push(word)
+            }
+            toRtn[i]["moroword"] = moroWordsArray
+        }
+        return toRtn
+    }
 
       function processdata(dirtydata){
         var results = [];
@@ -157,12 +174,10 @@
         }
     //Print out result dict
     //console.log("*********")
-    for(var i=0; i<results.length; ++i) {
-        console.log(JSON.stringify(results[i]))
-    }
-    console.log("DONE")
+    processedDict = sortAndRemoveCount(results)
+    //console.log("DONE")
     //return morphemes/glosses by moro morphemes
-    return _.sortBy (results, function(j) {
+    return _.sortBy (processedDict, function(j) {
       return j.moroword;
     })
 }
