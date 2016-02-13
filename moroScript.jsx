@@ -225,10 +225,30 @@
       //ReactClass for rendering a definition
       var Definition = React.createClass({
         render: function() {
+          var morph_def_pairs = _.map(this.props.moroword, function(morpheme) {
+            return {
+              morpheme: morpheme,
+              definition: this.props.definition
+            }
+          }.bind(this));
+
+          var rendered_morphemes = _.map(morph_def_pairs, function(pair, i) {
+            var comma = ', ';
+            if (i == 0) {
+              comma = '';
+            }
+            return <span key={pair.morpheme}>
+              {comma}
+              <Link to='Concordance' params={pair}>
+                {pair.morpheme}
+              </Link>
+            </span>;
+          })
+
           return (
             <div className="ui vertical segment">
               <h2>
-                {_.join(this.props.moroword, ", ")}
+                {rendered_morphemes}
               </h2>
               {this.props.definition}
             </div>
@@ -239,8 +259,11 @@
       var DictList = React.createClass({
         render: function() {
           var definitions=this.props.data.map(function(def) {
-            return ( <Definition moroword={def['moroword']} definition={def['definition']}/> )
+            return ( <Definition key={def['moroword'] + ':' + def.definition}
+                                 moroword={def['moroword']}
+                                 definition={def['definition']}/> )
           });
+
           return (
             <div>
               {definitions}
@@ -248,6 +271,7 @@
           );
         }
       });
+
       // React container that will show a loading dimmer until the dictionary data is available; then renders definitions
       var DictBox = React.createClass({
         getInitialState: function() {
@@ -255,23 +279,49 @@
         },
         componentDidMount: function() {
           dictionary_data_promise.then(function(dictdata) {
-                this.setState({data: dictdata, loaded: true});
+                this.setState({data: dictdata, loaded: true}, function() {
+                  $(this.refs.right_half.getDOMNode()).sticky({});
+                }.bind(this));
               }.bind(this));
         },
         render: function() {
           if (this.state.loaded) {
-            //TODO: rendering all definitions is slow, so we only render 10000 for now. Add pagination before rendering all. @HSande
             return (
-             <div>
-                Dictionary({this.state.data.length}): <DictList data={this.state.data.slice(0,10000)}/>
+             <div className="ui grid">
+                <div className="eight wide column">
+                  Dictionary({this.state.data.length}): <DictList data={this.state.data}/>
+                </div>
+                <div className="eight wide column">
+                  <div ref='right_half' className="ui sticky">
+                    <RouteHandler data={this.state.data}/>
+                  </div>
+                </div>
               </div>
             );
           }
           return <div className="ui active dimmer">
-                  <div className="ui text loader">Loading</div>
-                 </div>
+                <div className="ui text loader">Loading</div>
+           </div>
         }
       });
+
+      // Dictionary view with concordance.
+      var ConcordanceView = React.createClass({
+        render: function() {
+          var text = "Definition for: " + this.props.params.morpheme + 
+            " is " + this.props.params.definition;
+          return <div className="ui segment">
+                {text}
+              </div>
+        }
+      });
+
+      var DictView = React.createClass({
+        render: function() {
+          return <div> </div>
+        }
+      });
+
 
 //===================================================Text Page==================================
       // React Class that renders list of stories with links to story content pages (w/loading dimmer)
@@ -419,10 +469,15 @@
       // enables the single-page web app design
       var routes = <Route handler={App}>
         <Route path = '/' handler={Homepage} name = 'Homepage' />
-        <Route path = '/dict' handler={DictBox} name = 'Dictionary'/>
+        <Route path = '/dict' handler={DictBox} name = 'Dictionary'>
+          <Route path = '/dict'
+                 handler={DictView} name='Dict' />
+          <Route path = '/dict/concordance/:morpheme/:definition'
+                 handler={ConcordanceView} name = 'Concordance' />
+        </Route>
         <Route path = '/text' handler={TextBox} name = 'Texts' />
         <Route path = '/text/story/:key' handler={StoryView} name = 'Story' />
-        </Route>;
+      </Route>;
       ReactRouter.run(
         routes, function(Handler) {
           React.render(<Handler/>, document.getElementById('content'))
