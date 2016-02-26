@@ -1,5 +1,8 @@
       //Bottom of this doc sets up page structure and references components created above
       
+      //Global variable for moro_click database
+      var global_click_database = [];
+      
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       var Link = ReactRouter.Link;
@@ -49,17 +52,43 @@
 
       //===========================================Dictionary Code===========================================
 
+      //get id of all occurrences of the morpheme and definition pair from the global_click_database
+      function get_occurrence_ids(morpheme_click, definition_click) {
+        var results = [];
+        for (var i = 0; i < global_click_database.length; i++) {
+
+            var morpheme_definition_pair = global_click_database[i]["morpheme_definition"];
+                
+            var match_found = false;
+            for (var j = 0; j < morpheme_definition_pair.length; j++) {
+                if (morpheme_definition_pair[j]["moroword"] == morpheme_click && morpheme_definition_pair[j]["definition"] == definition_click) {
+                    match_found = true;
+                    break;
+                }
+            }
+            if (match_found) {
+                results = results.concat (global_click_database[i]["id"]);
+            //{sentence_id:dirtydata.rows[i].id, utterance_match:sentence.utterance, morphemes_match:sentence.morphemes, gloss_match:sentence.gloss, translation_match:sentence.translation});
+            }
+            
+        }
+        //console.log(results);
+        return results;
+      }
+
+
       //Segments a word into morphemes with glosses; morphemes from 'word' argument, glosses from 'glossword' argument
       function processword(word, glossword) {
         if (!word || !glossword) {
-          return []
+          return [[], []]
         }
         var results = [];
+        var click_database_result = [];
         var morphemes = word.split('-');
         var glosses = glossword.split('-');
         //if there is not the same number of dashes we aren't aligning the correct morphemes and gloss
         if (morphemes.length!=glosses.length) {
-          return [];
+          return [[], []];
         }
         var rootindex = -1;
         //identify verb roots so we can distinguish prefixes from suffixes
@@ -78,21 +107,25 @@
           var morpheme = removePunc(morphemes[i].toLowerCase());
           if (rootindex==-1) {
             results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
+            click_database_result.push({moroword:morpheme, definition:gloss});
           } else {
             if (i < rootindex) { 
              gloss = gloss+'-';
               morpheme = morpheme+'-';
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
+              click_database_result.push({moroword:morpheme, definition:gloss});
             } else if (i > rootindex) {
               gloss = '-'+gloss;
               morpheme = '-'+morpheme;
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
+              click_database_result.push({moroword:morpheme, definition:gloss});
             } else {
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
+              click_database_result.push({moroword:morpheme, definition:gloss});
             }
           }
         }
-        return results
+        return [results, click_database_result];
       }
 
     //merge two arrays and de-duplicate items
@@ -103,6 +136,20 @@
                 if(a[i]["word"] === a[j]["word"]) {
                     a.splice(j--, 1);
                     a[i]["count"] += 1 
+                }
+            }
+        }
+
+        return a;
+    }
+
+    //remove duplicate items for click morpheme_definition_pair_list
+    function arrayUniqueClick(array) {
+        var a = array.concat();
+        for(var i=0; i<a.length; ++i) {
+            for(var j=i+1; j<a.length; ++j) {
+                if(a[i]["moroword"] === a[j]["moroword"] && a[i]["definition"] === a[j]["definition"]) {
+                    a.splice(j--, 1);
                 }
             }
         }
@@ -143,13 +190,21 @@
             var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
             var morphemes = presplit_morphemes.split(/[ ]/);
             var gloss = sentence.gloss.split(/[ ]/);
+            
+            var morpheme_definition_pair_list = []; //store morpheme definition pair of a sentence
+
             if (gloss.length = morphemes.length) {
                 //process all morphemes and words
                 for (var ii = 0; ii < gloss.length; ii++) {
                     var morpheme = morphemes[ii]; 
                     var glossword = gloss[ii];
-                    var wordresults = processword(morpheme, glossword);
+                    var temp = processword(morpheme, glossword);
+                    var wordresults = temp[0];
+                    var click_database_results = temp[1];
                     var startIndex = 0;
+
+                    morpheme_definition_pair_list = morpheme_definition_pair_list.concat(click_database_results); //add in the morpheme definition pair
+
                     if (results.length == 0) {
                         results = results.concat(wordresults[startIndex]);
                         startIndex += 1;
@@ -169,11 +224,16 @@
                            results = results.concat(wordresults[k]);
                         }
                     }
-                } 
+                }
+                //remove duplicate pair 
+                morpheme_definition_pair_list = arrayUniqueClick(morpheme_definition_pair_list);
+                //add the morpheme definition pair list for each sentence into the global variable
+                global_click_database.push({id:dirtydata.rows[i].id, morpheme_definition:morpheme_definition_pair_list});
             }
         }
     //Print out result dict
-    //console.log("*********")
+    //console.log(JSON.stringify(results))
+    //console.log(JSON.stringify(global_click_database))
     processedDict = sortAndRemoveCount(results)
     //console.log("DONE")
     //return morphemes/glosses by moro morphemes
@@ -198,7 +258,6 @@
         var testcase1 = {rows:[{value:{sentence:{morphemes:'a', gloss:'A'}}}]};
         assert([{moroword:['a'], definition:'a'}], processdata(testcase1));
         var testcase2 = {rows:[{value:{sentence: {morphemes:'a-b d', gloss:'A-B A'}}}]};
-        //console.log(JSON.stringify(processdata(testcase2)));
         assert([{moroword:['a','d'], definition:'a'}, {moroword:['b'], definition:'b'}], processdata(testcase2));
        var testcase3 = {rows:[{value:{sentence:{morphemes:'"loman-nǝŋ maj-anda l-a-fo,', gloss:'day-indef man-assoc.pl cll-rtc-past.aux'}}}]};
         assert([{moroword:['a-'], definition:'rtc-'},
@@ -214,7 +273,7 @@
         var testcase5 = {rows:[{value:{sentence:{morphemes:'b-a c', gloss:'B-A C'}}}]};
         assert([{moroword:['a'], definition:'a'}, {moroword:['b'], definition:'b'}, {moroword:['c'], definition:'c'}], processdata(testcase5));
         } 
-      test_processdata();
+      //test_processdata();
 
       // promise that resolves when sentence data is loaded and processed into morpheme dictionary
       var dictionary_data_promise = raw_data_promise.then(function(rawdata) {
@@ -308,8 +367,12 @@
       // Dictionary view with concordance.
       var ConcordanceView = React.createClass({
         render: function() {
+          var morpheme = this.props.params.morpheme 
+          var definition = this.props.params.definition
+          var list_of_occurrence = get_occurrence_ids(morpheme, definition);
+          //console.log(list_of_occurrence);
           var text = "Definition for: " + this.props.params.morpheme + 
-            " is " + this.props.params.definition;
+            " is " + this.props.params.definition + " Occurred at sentence id: " + list_of_occurrence;
           return <div className="ui segment">
                 {text}
               </div>
