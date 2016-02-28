@@ -237,8 +237,14 @@
     processedDict = sortAndRemoveCount(results)
     //console.log("DONE")
     //return morphemes/glosses by moro morphemes
-    return _.sortBy (processedDict, function(j) {
-      return j.moroword;
+    return _.sortBy(processedDict, function(j) {
+      var moroword = _.cloneDeep(j.moroword);
+      return _.map(moroword, function(x) {
+        if (x[0] == '-') {
+          return x.slice(1);
+        }
+        return x;
+      });
     })
 }
 
@@ -296,11 +302,13 @@
             if (i == 0) {
               comma = '';
             }
+            var url = ('/#/dict/concordance/' + pair.morpheme + '/' +
+                       pair.definition + '?' + CurrentMetaURI().query());
             return <span key={pair.morpheme}>
               {comma}
-              <Link to='Concordance' params={pair}>
+              <a href={url}>
                 {pair.morpheme}
-              </Link>
+              </a>
             </span>;
           })
 
@@ -331,6 +339,40 @@
         }
       });
 
+
+      var DictPage = React.createClass({
+        render: function() {
+          var data = this.props.data;
+          var skip = this.props.skip;
+          var pagesize = this.props.limit;
+          var length = data.length;
+
+          skip = Math.max(0, Math.min(skip, length-pagesize));
+          var endskip = Math.max(0, length-pagesize);
+          var prevskip = Math.max(0, skip-pagesize);
+          var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
+          var page_controls = <div className="ui buttons">
+            <UrlParameterButton update={{skip: 0}}>
+                Begin
+            </UrlParameterButton>
+            <UrlParameterButton update={{skip: prevskip}}>
+                Prev
+            </UrlParameterButton>
+            <UrlParameterButton update={{skip: nextskip}}>
+                Next
+            </UrlParameterButton>
+            <UrlParameterButton update={{skip: endskip}}>
+                End
+            </UrlParameterButton>
+          </div>
+          return <div>
+            {page_controls}
+            <DictList data={_(data).drop(skip).take(pagesize).value()} />
+            {page_controls}
+          </div>
+        }
+      });
+
       // React container that will show a loading dimmer until the dictionary data is available; then renders definitions
       var DictBox = React.createClass({
         getInitialState: function() {
@@ -348,7 +390,10 @@
             return (
              <div className="ui grid">
                 <div className="eight wide column">
-                  Dictionary({this.state.data.length}): <DictList data={this.state.data}/>
+                  Dictionary({this.state.data.length}):
+                  <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
+                    <DictPage data={this.state.data}/>
+                  </UrlParameterExtractor>
                 </div>
                 <div className="eight wide column">
                   <div ref='right_half' className="ui sticky">
