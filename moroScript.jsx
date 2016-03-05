@@ -340,6 +340,8 @@
       });
 
 
+      // React container for rendering 1 page of dictionary entries, with a
+      // header and footer for page navigation.
       var DictPage = React.createClass({
         render: function() {
           var data = this.props.data;
@@ -351,20 +353,24 @@
           var endskip = Math.max(0, length-pagesize);
           var prevskip = Math.max(0, skip-pagesize);
           var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
-          var page_controls = <div className="ui buttons">
-            <UrlParameterButton update={{skip: 0}}>
-                Begin
-            </UrlParameterButton>
-            <UrlParameterButton update={{skip: prevskip}}>
-                Prev
-            </UrlParameterButton>
-            <UrlParameterButton update={{skip: nextskip}}>
-                Next
-            </UrlParameterButton>
-            <UrlParameterButton update={{skip: endskip}}>
-                End
-            </UrlParameterButton>
-          </div>
+          var page_controls = <div>
+            <div className="ui buttons">
+              <UrlParameterButton update={{skip: 0}}>
+                  Begin
+              </UrlParameterButton>
+              <UrlParameterButton update={{skip: prevskip}}>
+                  Prev
+              </UrlParameterButton>
+              <UrlParameterButton update={{skip: nextskip}}>
+                  Next
+              </UrlParameterButton>
+              <UrlParameterButton update={{skip: endskip}}>
+                  End
+              </UrlParameterButton>
+            </div>
+            <br/>
+            Showing {skip+1} - {skip + pagesize}:
+          </div>;
           return <div>
             {page_controls}
             <DictList data={_(data).drop(skip).take(pagesize).value()} />
@@ -380,19 +386,62 @@
         },
         componentDidMount: function() {
           dictionary_data_promise.then(function(dictdata) {
-                this.setState({data: dictdata, loaded: true}, function() {
-                  $(this.refs.right_half.getDOMNode()).sticky({});
-                }.bind(this));
-              }.bind(this));
+
+            // Find the first index of each letter, grouping numbers.
+            var alphabet = {}
+            _.forEach(dictdata, function consider_word(word, index) {
+              var c = _.get(word, ["moroword", 0, 0], "");
+              if (c == "-") {
+                c = _.get(word, ["moroword", 0, 1], "");
+              }
+              c = "" + c;
+              if (c.match(/[0-9]/)) {
+                c = '0-9';
+              }
+              if (c) {
+                if (alphabet[c] == undefined) {
+                  alphabet[c] = index;
+                }
+              }
+            });
+
+            this.setState(
+            {
+              data: dictdata,
+              alphabet: alphabet,
+              loaded: true
+            },
+            function() {
+              $(this.refs.right_half.getDOMNode()).sticky({});
+            }.bind(this));
+          }.bind(this));
         },
         render: function() {
           if (this.state.loaded) {
+            var alphabet = this.state.alphabet;
+            var alphabet_buttons = _.map(_.toPairs(alphabet), function(pair) {
+              var letter = pair[0];
+              var skip = pair[1];
+              return <UrlParameterButton key={letter}
+                        update={{skip: skip}}
+                        custom_style={{
+                          paddingLeft: "8px",
+                          paddingRight: "8px",
+                        }}>
+                  {letter}
+                </UrlParameterButton>;
+            });
             return (
              <div className="ui grid">
+                <div className="sixteen wide column">
+                  Dictionary({this.state.data.length} total entries): <br/>
+                  <div className="ui buttons" style={{marginBottom: "5px"}}>
+                  {alphabet_buttons}
+                  </div>
+                </div>
                 <div className="eight wide column">
-                  Dictionary({this.state.data.length}):
                   <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
-                    <DictPage data={this.state.data}/>
+                    <DictPage data={this.state.data} />
                   </UrlParameterExtractor>
                 </div>
                 <div className="eight wide column">

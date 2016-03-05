@@ -92,6 +92,13 @@ var UrlParameterButton = React.createClass({
     return false;
   },
   render: function() {
+    if (this.props.custom_style) {
+      return <div className="ui button"
+                  style={this.props.custom_style}
+                  onClick={this.HandleClick}>
+               {this.props.children}
+             </div>
+    }
     return <div className="ui button" onClick={this.HandleClick}>{this.props.children}</div>
   }
 })
