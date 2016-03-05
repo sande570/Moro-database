@@ -302,7 +302,7 @@
             if (i == 0) {
               comma = '';
             }
-            var url = ('/#/dict/concordance/' + pair.morpheme + '/' +
+            var url = ('#/dict/concordance/' + pair.morpheme + '/' +
                        pair.definition + '?' + CurrentMetaURI().query());
             return <span key={pair.morpheme}>
               {comma}
