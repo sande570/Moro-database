@@ -345,7 +345,6 @@
       var DictPage = React.createClass({
         render: function() {
           var data = this.props.data;
-          var alphabet = this.props.alphabet;
           var skip = this.props.skip;
           var pagesize = this.props.limit;
           var length = data.length;
@@ -433,7 +432,6 @@
                 </UrlParameterButton>;
             });
             return (
-              <div>
              <div className="ui grid">
                 <div className="sixteen wide column">
                   Dictionary({this.state.data.length} total entries): <br/>
@@ -443,10 +441,7 @@
                 </div>
                 <div className="eight wide column">
                   <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
-                    <DictPage
-                      data={this.state.data}
-                      alphabet={this.state.alphabet}
-                    />
+                    <DictPage data={this.state.data} />
                   </UrlParameterExtractor>
                 </div>
                 <div className="eight wide column">
@@ -454,7 +449,6 @@
                     <RouteHandler data={this.state.data}/>
                   </div>
                 </div>
-              </div>
               </div>
             );
           }
