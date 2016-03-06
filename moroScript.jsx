@@ -1,7 +1,8 @@
       //Bottom of this doc sets up page structure and references components created above
       
       //Global variable for moro_click database
-      var global_click_database = [];
+      var global_id_to_morpheme_definition = [];
+      var global_id_to_four_sentences = {};
       
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -52,12 +53,12 @@
 
       //===========================================Dictionary Code===========================================
 
-      //get id of all occurrences of the morpheme and definition pair from the global_click_database
+      //get id of all occurrences of the morpheme and definition pair from the global_id_to_morpheme_definition
       function get_occurrence_ids(morpheme_click, definition_click) {
         var results = [];
-        for (var i = 0; i < global_click_database.length; i++) {
+        for (var i = 0; i < global_id_to_morpheme_definition.length; i++) {
 
-            var morpheme_definition_pair = global_click_database[i]["morpheme_definition"];
+            var morpheme_definition_pair = global_id_to_morpheme_definition[i]["morpheme_definition"];
                 
             var match_found = false;
             for (var j = 0; j < morpheme_definition_pair.length; j++) {
@@ -67,13 +68,21 @@
                 }
             }
             if (match_found) {
-                results = results.concat (global_click_database[i]["id"]);
+                results = results.concat (global_id_to_morpheme_definition[i]["id"]);
             //{sentence_id:dirtydata.rows[i].id, utterance_match:sentence.utterance, morphemes_match:sentence.morphemes, gloss_match:sentence.gloss, translation_match:sentence.translation});
             }
             
         }
         //console.log(results);
         return results;
+      }
+
+      function get_four_sentences(list_of_id) {
+        var results = [];
+        for (var i = 0; i<list_of_id.length; i++) {
+          results = results.concat(global_id_to_four_sentences[list_of_id[i]])
+        }
+        return results
       }
 
 
@@ -228,12 +237,13 @@
                 //remove duplicate pair 
                 morpheme_definition_pair_list = arrayUniqueClick(morpheme_definition_pair_list);
                 //add the morpheme definition pair list for each sentence into the global variable
-                global_click_database.push({id:dirtydata.rows[i].id, morpheme_definition:morpheme_definition_pair_list});
+                global_id_to_morpheme_definition.push({id:dirtydata.rows[i].id, morpheme_definition:morpheme_definition_pair_list});
+                global_id_to_four_sentences[dirtydata.rows[i].id] = [dirtydata.rows[i].value.sentence.utterance, dirtydata.rows[i].value.sentence.morphemes, dirtydata.rows[i].value.sentence.gloss, dirtydata.rows[i].value.sentence.translation]
             }
         }
     //Print out result dict
     //console.log(JSON.stringify(results))
-    //console.log(JSON.stringify(global_click_database))
+    //console.log(JSON.stringify(global_id_to_morpheme_definition))
     processedDict = sortAndRemoveCount(results)
     //console.log("DONE")
     //return morphemes/glosses by moro morphemes
@@ -464,9 +474,9 @@
           var morpheme = this.props.params.morpheme 
           var definition = this.props.params.definition
           var list_of_occurrence = get_occurrence_ids(morpheme, definition);
-          //console.log(list_of_occurrence);
+          var list_of_four_sentences = get_four_sentences(list_of_occurrence)
           var text = "Definition for: " + this.props.params.morpheme + 
-            " is " + this.props.params.definition + " Occurred at sentence id: " + list_of_occurrence;
+            " is " + this.props.params.definition + " Occurred at: " + list_of_four_sentences;
           return <div className="ui segment">
                 {text}
               </div>
