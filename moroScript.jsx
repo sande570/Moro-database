@@ -476,7 +476,6 @@
           var list_of_occurrence = get_occurrence_ids(morpheme, definition);
           var list_of_four_sentences = get_rows(list_of_occurrence)
           var sentences = _.map(list_of_four_sentences, function(x) {
-            console.log(x);
             return <Sentence key={x.key} sentence={x.value.sentence} show_gloss={true} />
           });
           return <div className="ui segment">
