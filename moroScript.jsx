@@ -2,7 +2,7 @@
       
       //Global variable for moro_click database
       var global_id_to_morpheme_definition = [];
-      var global_id_to_four_sentences = {};
+      var global_id_to_row = {};
       
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -77,10 +77,10 @@
         return results;
       }
 
-      function get_four_sentences(list_of_id) {
+      function get_rows(list_of_id) {
         var results = [];
         for (var i = 0; i<list_of_id.length; i++) {
-          results = results.concat(global_id_to_four_sentences[list_of_id[i]])
+          results.push(global_id_to_row[list_of_id[i]])
         }
         return results
       }
@@ -238,7 +238,7 @@
                 morpheme_definition_pair_list = arrayUniqueClick(morpheme_definition_pair_list);
                 //add the morpheme definition pair list for each sentence into the global variable
                 global_id_to_morpheme_definition.push({id:dirtydata.rows[i].id, morpheme_definition:morpheme_definition_pair_list});
-                global_id_to_four_sentences[dirtydata.rows[i].id] = [dirtydata.rows[i].value.sentence.utterance, dirtydata.rows[i].value.sentence.morphemes, dirtydata.rows[i].value.sentence.gloss, dirtydata.rows[i].value.sentence.translation]
+                global_id_to_row[dirtydata.rows[i].id] = dirtydata.rows[i];
             }
         }
     //Print out result dict
@@ -474,12 +474,17 @@
           var morpheme = this.props.params.morpheme 
           var definition = this.props.params.definition
           var list_of_occurrence = get_occurrence_ids(morpheme, definition);
-          var list_of_four_sentences = get_four_sentences(list_of_occurrence)
-          var text = "Definition for: " + this.props.params.morpheme + 
-            " is " + this.props.params.definition + " Occurred at: " + list_of_four_sentences;
+          var list_of_four_sentences = get_rows(list_of_occurrence)
+          var sentences = _.map(list_of_four_sentences, function(x) {
+            console.log(x);
+            return <Sentence key={x.key} sentence={x.value.sentence} show_gloss={true} />
+          });
           return <div className="ui segment">
-                {text}
-              </div>
+            Definition for: {this.props.params.morpheme} is {this.props.params.definition}
+            <br/>
+            Occurred at:<br/>
+            {sentences}
+          </div>
         }
       });
 
@@ -514,6 +519,33 @@
                   <div className="ui text loader">Loading</div>
                  </div>
           }
+        }
+      });
+
+      // A component to render a single sentence.
+      var Sentence = React.createClass({
+        render: function() {
+          var gloss = '';
+          var sentence = this.props.sentence;
+          // interlinear gloss alignment
+          if (this.props.show_gloss) {
+            var morphemes = sentence.morphemes.split(' ');
+            var glosses = sentence.gloss.split(' ');
+            var pairs = _.zip(morphemes, glosses);
+            // render one inline block div containing morpheme and gloss per word
+            var glosses = _(pairs).map(function(x, i){
+              var morpheme = x[0];
+              var gloss = x[1];
+              return <div style={{display: "inline-block", marginRight: "5px"}} key={i}>{morpheme}<br/>{gloss}</div>
+            }.bind(this)).value();
+            gloss = <span>{glosses}<br/></span>;
+          }
+          // render utterance and translation
+          return <div style={{marginBottom: "10px"}}>
+            <b>{sentence.utterance}</b><br/>
+            {gloss}
+            {sentence.translation}
+          </div>
         }
       });
 
@@ -576,26 +608,9 @@
           ).map(
             // how to render a sentence
             function(x){
-              var gloss = '';
-              // interlinear gloss alignment
-              if (this.state.show_gloss) {
-                var morphemes = x.value.sentence.morphemes.split(' ');
-                var glosses = x.value.sentence.gloss.split(' ');
-                var pairs = _.zip(morphemes, glosses);
-                // render one inline block div containing morpheme and gloss per word
-                var glosses = _(pairs).map(function(x, i){
-                  var morpheme = x[0];
-                  var gloss = x[1];
-                  return <div style={{display: "inline-block", marginRight: "5px"}} key={i}>{morpheme}<br/>{gloss}</div>
-                }.bind(this)).value();
-                gloss = <span>{glosses}<br/></span>;
-              }
-              // render utterance and translation
-              return <div key={x.key} style={{marginBottom: "10px"}}>
-                <b>{x.value.sentence.utterance}</b><br/>
-                {gloss}
-                {x.value.sentence.translation}
-              </div>
+              return <Sentence key={x.key}
+                        sentence={x.value.sentence}
+                        show_gloss={this.state.show_gloss}/>;
             }.bind(this)
           ).value();
           // render story content page with title and checkbox to toggle interlinear gloss display
