@@ -262,8 +262,10 @@
           if (this.state.loaded) {
             //TODO: rendering all definitions is slow, so we only render 10000 for now. Add pagination before rendering all. @HSande
             return (
-             <div>
-                Dictionary({this.state.data.length}): <DictList data={this.state.data.slice(0,10000)}/>
+             <div className='ui text container'>
+             <h1> </h1>
+               <h1> Concordance({this.state.data.length}):</h1>
+             <DictList data={this.state.data.slice(0,10000)}/> 
               </div>
             );
           }
@@ -290,7 +292,7 @@
               return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
 
             });
-            return <div><ul>{results}</ul></div>;
+            return <div> <h1> </h1> <ul>{results}</ul></div>;
           }
           else {
             return <div className="ui active dimmer">
@@ -332,7 +334,7 @@
           for (var i = 0; i < arr.length; i++) {
             var o = arr[i];
             if (o.key == this.props.params.key) {
-              return o.value.name;
+              return  o.value.name;
             }
           }
           return "<Unknown Story>";
@@ -395,8 +397,37 @@
 
       var Homepage = React.createClass(
          {render: function() {
-          //TODO: add homepage content between Divs @HSande and @PJenks
-          return <div> Homepage </div>
+//=========================HOMEPAGE===============================
+          return <div className='ui text container'> 
+		   <h1> </h1>
+          <h1 className='ui dividing header'>Moro Language Stories</h1>
+          
+          <p>This website contains a collection of texts and stories in the Moro language. The Moro language was born in the Nuba Mountains of Sudan, where most of its speakers still live. Today Moro is also spoken in Khartoum, Sudan, and by Moro people living around the world. Through the stories on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
+          
+           <p>This page is also intended as a language resource for Moro people and researchers who are interested in learning more about the Moro language. The stories are a mixture of dialects, but often closely resemble the Wërria dialect, the same dialect in which the New Testament was written. As in all written Moro, tone is not marked in these stories. </p>
+            
+         	<h1 className='ui dividing header'>Project members</h1>
+
+
+			<h3> Angelo Naser (Author, Editor) </h3>
+        	<p> Born and raised in the Nuba Mountains, Angelo now works at the United Bible Society in Khartoum. </p> 
+
+			<h3> Peter Jenks (Editor) </h3>
+        	<p> Peter has studied the Moro language since 2005. He is an Assistant Professor at UC Berkeley</p> 
+
+			<h3> Hannah Sande (Editor) </h3>
+        	<p> Hannah is a graduate student in the UC Berkeley linguistics department. In addition to her work on Moro, Hannah has worked extensively on Guebie, an endangered Kru language spoken in the Ivory Coast. </p> 
+
+			<h3> Marcus Ewert </h3>
+        	<p> Marcus has helped linguists develop software for documentation. He works as a developer in the Bay Area.</p> 
+
+			<h3> Juwon Kim </h3>
+        	<p> UC Berkeley Class of 2018, Juwon is a double major in linguistics and computer science. </p> 
+
+			<h3> Maytas Monsereenusorn </h3>
+        	<p> UC Berkeley Class of 2016, Maytas is a double major in economics and computer science. </p> 
+
+          </div>
           }
          }
       )
@@ -404,16 +435,20 @@
       //render page template using ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       var App = React.createClass(
         {render: function() {
-          return <div className='ui container'> 
-          <div className='ui secondary menu'>
-            <Link className='item' to='Homepage' >Moro</Link> 
-            <Link className='item' to='Dictionary' >Dictionary</Link>
+          return <div className='ui main text container'> 
+          <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
+          <div className='ui text container'>
+            <Link className='item' to='Homepage' >About</Link> 
             <Link className='item' to='Texts' >Texts</Link>
+            <Link className='item' to='Dictionary' >Concordance</Link>
+        </div>
           </div>
-          <RouteHandler/> </div>
+          ::after 
+		 <RouteHandler/> </div>
         }
-
         });
+
+
 
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       // enables the single-page web app design
