@@ -396,11 +396,12 @@
       });
 
       var Homepage = React.createClass(
+             
          {render: function() {
 //=========================HOMEPAGE===============================
-          return <div className='ui text container'> 
-		   <h1> </h1>
-          <h1 className='ui dividing header'>Moro Language Stories</h1>
+          return   <div className='ui text container'> 
+				
+          		<h1 className='ui dividing header'>Moro Language Stories</h1>
           
           <p>This website contains a collection of texts and stories in the Moro language. The Moro language was born in the Nuba Mountains of Sudan, where most of its speakers still live. Today Moro is also spoken in Khartoum, Sudan, and by Moro people living around the world. Through the stories on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
           
@@ -437,17 +438,22 @@
         {render: function() {
           return <div className='ui main text container'> 
           <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
-          <div className='ui text container'>
-            <Link className='item' to='Homepage' >About</Link> 
-            <Link className='item' to='Texts' >Texts</Link>
-            <Link className='item' to='Dictionary' >Concordance</Link>
-        </div>
+       	   		<div className='ui text container'>
+            		<Link className='item' to='Homepage' >About</Link> 
+            		<Link className='item' to='Texts' >Texts</Link>
+            		<Link className='item' to='Dictionary' >Concordance</Link>
+        		</div>
           </div>
-          ::after 
+           		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
+          			<div className='ui text container'>
+            			<Link className='item' to='Homepage' >About</Link> 
+            			<Link className='item' to='Texts' >Texts</Link>
+            			<Link className='item' to='Dictionary' >Concordance</Link>
+        			</div>
+          		</div>
 		 <RouteHandler/> </div>
         }
         });
-
 
 
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
