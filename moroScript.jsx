@@ -443,7 +443,6 @@
             });
             return (
              <div className='ui text container'>
-               <h1></h1>
                <div className="ui grid">
                   <div className="sixteen wide column">
                     <h1>
@@ -517,7 +516,7 @@
               return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
 
             });
-            return <div> <h1> </h1> <ul>{results}</ul></div>;
+            return <div><ul>{results}</ul></div>;
           }
           else {
             return <div className="ui active dimmer">
