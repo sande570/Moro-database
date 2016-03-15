@@ -14,6 +14,10 @@ function GetQuery() {
   return current_uri.search(true);
 }
 
+function GetVar(key, default_value) {
+  return _.get(GetQuery(), [key], default_value);
+}
+
 function GetQueryString() {
   var current_uri = CurrentMetaURI();
   return current_uri.search(true);
@@ -102,3 +106,40 @@ var UrlParameterButton = React.createClass({
     return <div className="ui button" onClick={this.HandleClick}>{this.props.children}</div>
   }
 })
+
+var SearchBox = React.createClass({
+  getInitialState: function() {
+    return {
+        search: GetVar('search', '')
+    };
+  },
+  setSearch: function(e) {
+    this.setState({
+      search: e.target.value
+    });
+  },
+  submitSearch: function(e) {
+    UpdateQuery({'search': this.state.search});
+    if(this.props.onGo) {
+      this.props.onGo();
+    }
+    e.preventDefault();
+    return false;
+  },
+  render: function() {
+    return (
+        <form onSubmit={this.submitSearch}>
+          <div className="ui icon input" style={{"display": "inline-block",
+                                                 "marginRight": "5px"}}>
+            <input type="text"
+                   placeholder="Search..."
+                   value={this.state.search}
+                   onChange={this.setSearch}/>
+            <i className="search icon"></i>
+          </div>
+          <input type="submit" value="Go"></input>
+        </form>
+    );
+  }
+});
+

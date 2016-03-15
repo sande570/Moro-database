@@ -16,8 +16,10 @@
 
       // Endpoint for all up-to-date sentence data from all stories.
       var sentence_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_sentences';
+      var sentence_url = 'sentences.json';
       // Endpoint mapping story id to story name
       var story_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_stories';
+      var story_url = 'stories.json';
 
       // Promise that is resolved once the sentence data is loaded
       var raw_data_promise = new Promise(function(resolve, reject) {
@@ -354,7 +356,14 @@
       // header and footer for page navigation.
       var DictPage = React.createClass({
         render: function() {
+
           var data = this.props.data;
+
+          // TODO: Only show `data` that matches this search query:
+          // Also, we might have to compute the alphabet on-demand here, since
+          // our skips are going to be wrong.
+          console.log(this.props.search);
+
           var skip = this.props.skip;
           var pagesize = this.props.limit;
           var length = data.length;
@@ -392,7 +401,13 @@
       // React container that will show a loading dimmer until the dictionary data is available; then renders definitions
       var DictBox = React.createClass({
         getInitialState: function() {
-          return {data: [], loaded: false};
+          return {
+            data: [],
+            loaded: false,
+          };
+        },
+        clearSkip : function() {
+          UpdateQuery({'skip': 0});
         },
         componentDidMount: function() {
           dictionary_data_promise.then(function(dictdata) {
@@ -441,27 +456,39 @@
                   {letter}
                 </UrlParameterButton>;
             });
+
+            var data = this.state.data;
             return (
              <div className='ui text container'>
                <h1></h1>
                <div className="ui grid">
                   <div className="sixteen wide column">
                     <h1>
-                    Concordance({this.state.data.length} total entries):
+                    Concordance({data.length} total entries):
                     </h1>
-                    <br/>
-                    <div className="ui buttons" style={{marginBottom: "5px"}}>
-                    {alphabet_buttons}
+
+                    <div className="ui right aligned grid">
+                      <div className="right floated right aligned eight wide column">
+                          <SearchBox onGo={this.clearSkip}/>
+                      </div>
+                      <div className="sixteen wide column">
+                          <div className="ui buttons" style={{marginBottom: "5px"}}>
+                          {alphabet_buttons}
+                          </div>
+                      </div>
                     </div>
+
                   </div>
                   <div className="eight wide column">
-                    <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
-                      <DictPage data={this.state.data} />
+                    <UrlParameterExtractor defaults={{skip: 0,
+                                                      limit: 50,
+                                                      search: ''}}>
+                      <DictPage data={data} />
                     </UrlParameterExtractor>
                   </div>
                   <div className="eight wide column">
                     <div ref='right_half' className="ui sticky">
-                      <RouteHandler data={this.state.data}/>
+                      <RouteHandler data={data}/>
                     </div>
                   </div>
                 </div>
@@ -667,6 +694,34 @@
          }
       )
 
+//=========================Search Page===============================
+      var SearchPane = React.createClass({
+        render: function() {
+          return (
+            <div>
+              <h1> </h1>
+              <center>
+                <SearchBox />
+              </center>
+              <div>
+                Results <br/>
+                Sentences here that match {this.props.search}.
+              </div>
+            </div>
+          );
+        }
+      });
+
+      var SearchPage = React.createClass({
+        render: function() {
+          return (
+            <UrlParameterExtractor defaults={{search: ''}}>
+              <SearchPane />
+            </UrlParameterExtractor>
+          );
+        }
+      });
+
       //render page template using ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       var App = React.createClass(
         {render: function() {
@@ -676,7 +731,8 @@
             <Link className='item' to='Homepage' >About</Link> 
             <Link className='item' to='Texts' >Texts</Link>
             <Link className='item' to='Dictionary' >Concordance</Link>
-        </div>
+            <Link className='item' to='Search' >Search</Link>
+          </div>
           </div>
           ::after 
 		 <RouteHandler/> </div>
@@ -688,15 +744,16 @@
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       // enables the single-page web app design
       var routes = <Route handler={App}>
-        <Route path = '/' handler={Homepage} name = 'Homepage' />
-        <Route path = '/dict' handler={DictBox} name = 'Dictionary'>
+        <Route path = '/' handler={Homepage} name='Homepage' />
+        <Route path = '/dict' handler={DictBox} name='Dictionary'>
           <Route path = '/dict'
                  handler={DictView} name='Dict' />
           <Route path = '/dict/concordance/:morpheme/:definition'
-                 handler={ConcordanceView} name = 'Concordance' />
+                 handler={ConcordanceView} name='Concordance' />
         </Route>
-        <Route path = '/text' handler={TextBox} name = 'Texts' />
-        <Route path = '/text/story/:key' handler={StoryView} name = 'Story' />
+        <Route path = '/text' handler={TextBox} name='Texts' />
+        <Route path = '/text/story/:key' handler={StoryView} name='Story' />
+        <Route path = '/search' handler={SearchPage} name='Search' />
       </Route>;
       ReactRouter.run(
         routes, function(Handler) {
