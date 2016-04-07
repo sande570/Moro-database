@@ -443,7 +443,6 @@
             });
             return (
              <div className='ui text container'>
-               <h1></h1>
                <div className="ui grid">
                   <div className="sixteen wide column">
                     <h1>
@@ -517,7 +516,7 @@
               return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
 
             });
-            return <div> <h1> </h1> <ul>{results}</ul></div>;
+            return <div><ul>{results}</ul></div>;
           }
           else {
             return <div className="ui active dimmer">
@@ -532,6 +531,19 @@
         render: function() {
           var gloss = '';
           var sentence = this.props.sentence;
+
+          if (this.props.only_utterance) {
+            return <div style={{marginBottom: "10px"}}>
+              {sentence.utterance}
+            </div>;
+          }
+
+          if (this.props.only_translation) {
+            return <div style={{marginBottom: "10px"}}>
+              {sentence.translation}
+            </div>;
+          }
+          
           // interlinear gloss alignment
           if (this.props.show_gloss) {
             var morphemes = sentence.morphemes.split(' ');
@@ -545,6 +557,7 @@
             }.bind(this)).value();
             gloss = <span>{glosses}<br/></span>;
           }
+
           // render utterance and translation
           return <div style={{marginBottom: "10px"}}>
             <b>{sentence.utterance}</b><br/>
@@ -564,7 +577,9 @@
         getInitialState: function() {
           return {sentence: {data: [], loaded: false},
                   story: {data: [], loaded: false},
-                  show_gloss: false}
+                  show_gloss: false,
+                  story_view: false,
+                  };
         },
         //queue uploading of story and sentence data when this component is mounted
         componentDidMount: function() {
@@ -593,7 +608,23 @@
         },
         //toggles interlinear gloss or not
         toggleGloss: function() {
-          this.setState({show_gloss: !this.state.show_gloss});
+          var new_show_gloss = !this.state.show_gloss;
+          var new_story_view = this.state.story_view;
+          if(new_show_gloss) {
+            new_story_view = false;
+          }
+          this.setState({show_gloss: new_show_gloss,
+                         story_view: new_story_view});
+        },
+        //toggles story view
+        toggleStoryView: function() {
+          var new_show_gloss = this.state.show_gloss;
+          var new_story_view = !this.state.story_view;
+          if(new_story_view) {
+            new_show_gloss = false;
+          }
+          this.setState({show_gloss: new_show_gloss,
+                         story_view: new_story_view});
         },
         //renders component
         render: function() {
@@ -605,24 +636,78 @@
           }
           // process sentence data to render alignment of morphemes/glosses and show one clause per line
           // lodash chaining: https://lodash.com/docs#_
-          var sentences = _(this.state.sentence.data).filter(
+          var sentences;
+          var story_sentences = _(this.state.sentence.data).filter(
             // render sentences from this story
             function(x){
               return x.value.story == this.props.params.key;
             }.bind(this)
-          ).map(
-            // how to render a sentence
-            function(x){
-              return <Sentence key={x.key}
-                        sentence={x.value.sentence}
-                        show_gloss={this.state.show_gloss}/>;
-            }.bind(this)
-          ).value();
+          );
+          if (this.state.story_view) {
+            var sentence_rows = story_sentences.map(
+              function(x) {
+                  return [
+                    (
+                      <div key={x.key + "-1"} className="eight wide column"
+                           style={{"padding": "0px"}}>
+                        <Sentence sentence={x.value.sentence}
+                                  only_utterance="true" />
+                      </div>
+                    ),
+                    (
+                      <div key={x.key + "-2"} className="eight wide column"
+                           style={{"padding": "0px"}}>
+                        <Sentence sentence={x.value.sentence}
+                                  only_translation="true" />
+                      </div>
+                    )
+                  ];
+              }.bind(this)
+            ).value();
+
+            sentences = (
+             <div className='ui text container'
+                  style={{"padding-top": "14px"}}>
+               <div className="ui grid">
+                {sentence_rows}
+               </div>
+             </div>
+            );
+          } else {
+            sentences = story_sentences.map(
+              // how to render a sentence
+              function(x){
+                return <Sentence key={x.key}
+                          sentence={x.value.sentence}
+                          show_gloss={this.state.show_gloss}/>;
+              }.bind(this)
+            ).value();
+          }
           // render story content page with title and checkbox to toggle interlinear gloss display
           return (
             <div>
               <h1>{this.getStory()}</h1>
-              <div style={{marginBottom: "15px"}}>Show Gloss: <input type="checkbox" checked={this.state.show_gloss} onChange={this.toggleGloss}/></div>
+              <div className="ui form">
+
+                <div className="grouped fields">
+                  <label>View Options</label>
+
+                  <div className="field">
+                    <div className="ui slider checkbox">
+                      <input type="radio" name="throughput" checked={this.state.show_gloss} onChange={this.toggleGloss}> </input>
+                      <label>Show Glosses</label>
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <div className="ui slider checkbox">
+                      <input type="radio" name="throughput" checked={this.state.story_view} onChange={this.toggleStoryView}> </input>
+                      <label>Story View</label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
               {sentences}
             </div>
           );
@@ -631,13 +716,18 @@
       });
 
       var Homepage = React.createClass(
+             
          {render: function() {
 //=========================HOMEPAGE===============================
-          return <div className='ui text container'> 
-		   <h1> </h1>
-          <h1 className='ui dividing header'>Moro Language Stories</h1>
+          return   <div className='ui text container'> 
+
+				
+          		<h1 className='ui dividing header'>Moro Language Stories</h1>
+
+              <img className="ui medium right floated rounded image" src="./images/Nuba-berge.jpg"></img>
           
           <p>This website contains a collection of texts and stories in the Moro language. The Moro language was born in the Nuba Mountains of Sudan, where most of its speakers still live. Today Moro is also spoken in Khartoum, Sudan, and by Moro people living around the world. Through the stories on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
+
           
            <p>This page is also intended as a language resource for Moro people and researchers who are interested in learning more about the Moro language. The stories are a mixture of dialects, but often closely resemble the Wërria dialect, the same dialect in which the New Testament was written. As in all written Moro, tone is not marked in these stories. </p>
             
@@ -672,17 +762,22 @@
         {render: function() {
           return <div className='ui main text container'> 
           <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
-          <div className='ui text container'>
-            <Link className='item' to='Homepage' >About</Link> 
-            <Link className='item' to='Texts' >Texts</Link>
-            <Link className='item' to='Dictionary' >Concordance</Link>
-        </div>
+       	   		<div className='ui text container'>
+            		<Link className='item' to='Homepage' >About</Link> 
+            		<Link className='item' to='Texts' >Texts</Link>
+            		<Link className='item' to='Dictionary' >Concordance</Link>
+        		</div>
           </div>
-          ::after 
+           		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
+          			<div className='ui text container'>
+            			<Link className='item' to='Homepage' >About</Link> 
+            			<Link className='item' to='Texts' >Texts</Link>
+            			<Link className='item' to='Dictionary' >Concordance</Link>
+        			</div>
+          		</div>
 		 <RouteHandler/> </div>
         }
         });
-
 
 
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
