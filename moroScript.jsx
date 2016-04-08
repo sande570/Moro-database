@@ -3,6 +3,8 @@
       //Global variable for moro_click database
       var global_id_to_morpheme_definition = [];
       var global_id_to_row = {};
+      var global_whole_data;
+      var firstLoad = true;
       
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -356,18 +358,72 @@
         }
       });
 
+      //matchSearchFunc for definition to searchTerm
+      // function matchSearchFunc (searchTerm) {
+      //   return function(element) {
+      //     if (element.definition == searchTerm) {
+      //       return true;
+      //     } else {
+      //       return false;
+      //     }
+      //   }
+      // }
+
+      //matchSearchFunc healper for moroword to searchTerm (with regrex)
+      function findMoroWordInArray (categories, moroword) {
+        var found = false;
+        for (i = 0; i < categories.length && !found; i++) {
+          // if (categories[i] === moroword) {
+          var re = ".*" + moroword + ".*";
+          if (categories[i].match(re)) {
+            found = true;
+          }
+        }
+        return found
+      }
+
+      // //matchSearchFunc healper for moroword to searchTerm (without regrex)
+      // function findMoroWordInArray (categories, moroword) {
+      //   var found = false;
+      //   for (i = 0; i < categories.length && !found; i++) {
+      //     if (categories[i] === moroword) {
+      //       found = true;
+      //     }
+      //   }
+      //   return found
+      // }
+
+      //matchSearchFunc for moroword to searchTerm
+      function matchSearchFunc (searchTerm) {
+        return function(element) {
+          return findMoroWordInArray(element.moroword, searchTerm)
+        }
+      }
 
       // React container for rendering 1 page of dictionary entries, with a
       // header and footer for page navigation.
       var DictPage = React.createClass({
         render: function() {
 
+          if (firstLoad == true) {
+            global_whole_data = this.props.data;
+            firstLoad = false;
+          }
+
           var data = this.props.data;
+          var search = this.props.search;
+          if (search == "") {
+            data = global_whole_data;
+          } else {
+            data = data.filter(matchSearchFunc(search));
+          }
+
 
           // TODO: Only show `data` that matches this search query:
           // Also, we might have to compute the alphabet on-demand here, since
           // our skips are going to be wrong.
-          console.log(this.props.search);
+          console.log(this.props);
+
 
           var skip = this.props.skip;
           var pagesize = this.props.limit;
@@ -530,7 +586,6 @@
           return <div> </div>
         }
       });
-
 
 //===================================================Text Page==================================
       // React Class that renders list of stories with links to story content pages (w/loading dimmer)
