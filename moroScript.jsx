@@ -415,7 +415,28 @@
           if (search == "") {
             data = global_whole_data;
           } else {
-            data = data.filter(matchSearchFunc(search));
+            var filter;
+
+            // All blocked out for different paremeters, but currently only 
+            if (this.props.search_language == 'eng') {
+              if(this.props.regex) {
+                filter = matchSearchFunc;
+                console.log("ENG REGEX");
+              } else {
+                filter = matchSearchFunc;
+                console.log("ENG PLAIN");
+              }
+            } else {
+              if(this.props.regex) {
+                filter = matchSearchFunc;
+                console.log("MORO REGEX");
+              } else {
+                filter = matchSearchFunc;
+                console.log("MORO PLAIN");
+              }
+            }
+
+            data = data.filter(filter(search));
           }
 
 
@@ -434,19 +455,19 @@
           var prevskip = Math.max(0, skip-pagesize);
           var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
           var page_controls = <div>
-            <div className="ui buttons">
-              <UrlParameterButton update={{skip: 0}}>
-                  Begin
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: prevskip}}>
-                  Prev
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: nextskip}}>
-                  Next
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: endskip}}>
-                  End
-              </UrlParameterButton>
+            <div>
+              <UrlParameterLink update={{skip: 0}}>
+              {' |< '}
+              </UrlParameterLink>
+              <UrlParameterLink update={{skip: prevskip}}>
+              {' < '}
+              </UrlParameterLink>
+              <UrlParameterLink update={{skip: nextskip}}>
+              {' > '}
+              </UrlParameterLink>
+              <UrlParameterLink update={{skip: endskip}}>
+              {' >| '}
+              </UrlParameterLink>
             </div>
             <br/>
             Showing {skip+1} - {skip + pagesize}:
@@ -528,9 +549,10 @@
                     Concordance({data.length} total entries):
                     </h1>
 
-                    <div className="ui right aligned grid">
-                      <div className="right floated right aligned eight wide column">
-                          <SearchBox onGo={this.clearSkip}/>
+                    <div className="ui grid">
+                      <div className="sixteen wide column">
+                          <SearchBox renderParameters={true}
+                                     onGo={this.clearSkip}/>
                       </div>
                       <div className="sixteen wide column">
                           <div className="ui buttons" style={{marginBottom: "5px"}}>
@@ -543,7 +565,9 @@
                   <div className="eight wide column">
                     <UrlParameterExtractor defaults={{skip: 0,
                                                       limit: 50,
-                                                      search: ''}}>
+                                                      search: '',
+                                                      regex: false,
+                                                      search_language: 'moro'}}>
                       <DictPage data={data} />
                     </UrlParameterExtractor>
                   </div>
@@ -592,7 +616,7 @@
       var TextBox = React.createClass({
         getInitialState: function() {
           return {data: [], loaded: false};
-        },
+       },
         componentDidMount: function() {
           story_data_promise.then(function(rawdata){
             this.setState({data: rawdata, loaded: true});

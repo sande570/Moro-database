@@ -107,10 +107,15 @@ var UrlParameterButton = React.createClass({
   }
 })
 
+var _ENGLISH = 'eng';
+var _MORO = 'moro';
+
 var SearchBox = React.createClass({
   getInitialState: function() {
     return {
-        search: GetVar('search', '')
+        search: GetVar('search', ''),
+        regex: GetVar('regex', false),
+        search_language: GetVar('slang', _MORO),
     };
   },
   setSearch: function(e) {
@@ -118,17 +123,103 @@ var SearchBox = React.createClass({
       search: e.target.value
     });
   },
+  setRegex: function(e) {
+    var newval = false;
+    if (e.target.name == 'regex') {
+      newval = true;
+    }
+    this.setState({
+      regex: newval
+    });
+  },
+  setSearchLanguage: function(e) {
+    this.setState({
+      search_language: e.target.name
+    });
+  },
   submitSearch: function(e) {
-    UpdateQuery({'search': this.state.search});
+    if (this.props.renderParameters) {
+      UpdateQuery({
+        'search': this.state.search,
+        'regex': this.state.regex ? 1 : '',
+        'search_language': this.state.search_language,
+      });
+    } else {
+      UpdateQuery({'search': this.state.search});
+    }
     if(this.props.onGo) {
       this.props.onGo();
     }
     e.preventDefault();
     return false;
   },
+  renderRegex: function() {
+    return (
+      <div className="inline fields" style={{'display': 'inline-block',
+                                             'marginLeft': '5px',
+                                             'marginRight': '5px',
+                                             'textAlign': 'left'}}>
+      <label>Search type</label>
+      <div className="field">
+        <div className="ui radio checkbox">
+          <input type="radio"
+                 name="plain"
+                 checked={!this.state.regex}
+                 onChange={this.setRegex} />
+          <label>Plain text</label>
+        </div>
+      </div>
+      <div className="field">
+        <div className="ui radio checkbox">
+          <input type="radio"
+                 name="regex"
+                 checked={this.state.regex}
+                 onChange={this.setRegex} />
+          <label>Regex</label>
+        </div>
+      </div>
+    </div>
+    );
+  },
+  renderLanguage: function() {
+    return (
+      <div className="inline fields" style={{'display': 'inline-block',
+                                             'marginLeft': '5px',
+                                             'marginRight': '5px',
+                                             'textAlign': 'left'}}>
+      <label>Search Language</label>
+      <div className="field">
+        <div className="ui radio checkbox">
+          <input type="radio"
+                 name={_MORO}
+                 checked={this.state.search_language == _MORO}
+                 onChange={this.setSearchLanguage} />
+          <label>Moro</label>
+        </div>
+      </div>
+      <div className="field">
+        <div className="ui radio checkbox">
+          <input type="radio"
+                 name={_ENGLISH}
+                 checked={this.state.search_language == _ENGLISH}
+                 onChange={this.setSearchLanguage} />
+          <label>English</label>
+        </div>
+      </div>
+    </div>
+    );
+  },
   render: function() {
+    var rendered_parameters = '';
+    if (this.props.renderParameters) {
+      rendered_parameters = <div style={{'display': 'inline-block'}}>
+        {this.renderRegex()}
+        {this.renderLanguage()}
+      </div>;
+    }
     return (
         <form onSubmit={this.submitSearch}>
+          {rendered_parameters}
           <div className="ui icon input" style={{"display": "inline-block",
                                                  "marginRight": "5px"}}>
             <input type="text"
