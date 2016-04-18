@@ -166,7 +166,7 @@ var SearchBox = React.createClass({
                  name="plain"
                  checked={!this.state.regex}
                  onChange={this.setRegex} />
-          <label>Plain text</label>
+          <label>Exact Match</label>
         </div>
       </div>
       <div className="field">
@@ -175,7 +175,7 @@ var SearchBox = React.createClass({
                  name="regex"
                  checked={this.state.regex}
                  onChange={this.setRegex} />
-          <label>Regex</label>
+          <label>Contains</label>
         </div>
       </div>
     </div>
