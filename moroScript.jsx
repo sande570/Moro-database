@@ -358,19 +358,59 @@
         }
       });
 
-      //matchSearchFunc for definition to searchTerm
-      // function matchSearchFunc (searchTerm) {
-      //   return function(element) {
-      //     if (element.definition == searchTerm) {
-      //       return true;
-      //     } else {
-      //       return false;
-      //     }
-      //   }
-      // }
+
+      //SEARCH CODE
+
+      //matchSearchFunc for definition to searchTerm (EngPlain)
+      function matchSearchFuncEngPlain (searchTerm) {
+        return function(element) {
+          if (element.definition == searchTerm) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+
+      //matchSearchFunc for definition to searchTerm (EngRegex)
+      function matchSearchFuncEngRegex (searchTerm) {
+        return function(element) {
+          var re = ".*" + searchTerm + ".*";
+          if (element.definition.match(re)) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+
+      //matchSearchFunc for moroword to searchTerm (MoroPlain)
+      function matchSearchFuncMoroPlain (searchTerm) {
+        return function(element) {
+          return findMoroWordInArrayMoroPlain(element.moroword, searchTerm)
+        }
+      }
+
+      //matchSearchFunc healper for moroword to searchTerm (without regrex)
+      function findMoroWordInArrayMoroPlain (categories, moroword) {
+        var found = false;
+        for (i = 0; i < categories.length && !found; i++) {
+          if (categories[i] === moroword) {
+            found = true;
+          }
+        }
+        return found
+      }
+
+      //matchSearchFunc for moroword to searchTerm (MoroRegex)
+      function matchSearchFuncMoroRegex (searchTerm) {
+        return function(element) {
+          return findMoroWordInArrayMoroRegex(element.moroword, searchTerm)
+        }
+      }
 
       //matchSearchFunc healper for moroword to searchTerm (with regrex)
-      function findMoroWordInArray (categories, moroword) {
+      function findMoroWordInArrayMoroRegex (categories, moroword) {
         var found = false;
         for (i = 0; i < categories.length && !found; i++) {
           // if (categories[i] === moroword) {
@@ -382,23 +422,6 @@
         return found
       }
 
-      // //matchSearchFunc healper for moroword to searchTerm (without regrex)
-      // function findMoroWordInArray (categories, moroword) {
-      //   var found = false;
-      //   for (i = 0; i < categories.length && !found; i++) {
-      //     if (categories[i] === moroword) {
-      //       found = true;
-      //     }
-      //   }
-      //   return found
-      // }
-
-      //matchSearchFunc for moroword to searchTerm
-      function matchSearchFunc (searchTerm) {
-        return function(element) {
-          return findMoroWordInArray(element.moroword, searchTerm)
-        }
-      }
 
       // React container for rendering 1 page of dictionary entries, with a
       // header and footer for page navigation.
@@ -420,18 +443,18 @@
             // All blocked out for different paremeters, but currently only 
             if (this.props.search_language == 'eng') {
               if(this.props.regex) {
-                filter = matchSearchFunc;
+                filter = matchSearchFuncEngRegex;
                 console.log("ENG REGEX");
               } else {
-                filter = matchSearchFunc;
+                filter = matchSearchFuncEngPlain;
                 console.log("ENG PLAIN");
               }
             } else {
               if(this.props.regex) {
-                filter = matchSearchFunc;
+                filter = matchSearchFuncMoroRegex;
                 console.log("MORO REGEX");
               } else {
-                filter = matchSearchFunc;
+                filter = matchSearchFuncMoroPlain;
                 console.log("MORO PLAIN");
               }
             }
