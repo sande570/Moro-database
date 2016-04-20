@@ -513,7 +513,7 @@
         render: function() {
           if (this.state.loaded){
             var results = this.state.data.rows.map(function (x) {
-              return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
+              return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link> by {x.value.author}</li>
 
             });
             return <div><ul>{results}</ul></div>;
@@ -595,16 +595,24 @@
         loaded: function() {
           return this.state.story.loaded && this.state.sentence.loaded;
         },
-        //return name of story by searching story data for this story's id
+        // Get the story object
         getStory: function() {
           var arr = this.state.story.data;
           for (var i = 0; i < arr.length; i++) {
             var o = arr[i];
             if (o.key == this.props.params.key) {
-              return  o.value.name;
+              return  o.value;
             }
           }
-          return "<Unknown Story>";
+          return {};
+        },
+        //return name of story by searching story data for this story's id
+        getStoryName: function() {
+          return _.get(this.getStory(), 'name', "<Unknown Story>");
+        },
+        //return author of story by searching story data for this story's id
+        getStoryAuthor: function() {
+          return _.get(this.getStory(), 'author', "");
         },
         //toggles interlinear gloss or not
         toggleGloss: function() {
@@ -669,6 +677,14 @@
              <div className='ui text container'
                   style={{"padding-top": "14px"}}>
                <div className="ui grid">
+                 <div className="eight wide column"
+                      style={{"padding": "0px"}}>
+                      <h2>Moro</h2>
+                 </div>
+                 <div className="eight wide column"
+                      style={{"padding": "0px"}}>
+                      <h2>English</h2>
+                 </div>
                 {sentence_rows}
                </div>
              </div>
@@ -686,8 +702,7 @@
           // render story content page with title and checkbox to toggle interlinear gloss display
           return (
             <div>
-              <h1>{this.getStory()}</h1>
-              <div className="ui form">
+              <h1>{this.getStoryName()}</h1> by {this.getStoryAuthor()} <div className="ui form">
 
                 <div className="grouped fields">
                   <label>View Options</label>
