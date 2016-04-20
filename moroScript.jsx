@@ -123,6 +123,9 @@
         for (var i = 0; i < glosses.length; i++) {
           var gloss = removePunc(glosses[i].toLowerCase());
           var morpheme = removePunc(morphemes[i].toLowerCase());
+          if (gloss.match(/^[0-9]*$/)){
+            continue
+          }
           if (rootindex==-1) {
             results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
             click_database_result.push({moroword:morpheme, definition:gloss});
@@ -206,8 +209,8 @@
             // split on spaces and remove punctuation from morphemes line
             var sentence = dirtydata.rows[i].value.sentence; 
             var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
-            var morphemes = presplit_morphemes.split(/[ ]/);
-            var gloss = sentence.gloss.split(/[ ]/);
+            var morphemes = presplit_morphemes.split(/[ ][ ]*/);
+            var gloss = sentence.gloss.split(/[ ][ ]*/);
             
             var morpheme_definition_pair_list = []; //store morpheme definition pair of a sentence
 
@@ -440,22 +443,17 @@
           } else {
             var filter;
 
-            // All blocked out for different paremeters, but currently only 
             if (this.props.search_language == 'eng') {
               if(this.props.regex) {
                 filter = matchSearchFuncEngRegex;
-                console.log("ENG REGEX");
               } else {
                 filter = matchSearchFuncEngPlain;
-                console.log("ENG PLAIN");
               }
             } else {
               if(this.props.regex) {
                 filter = matchSearchFuncMoroRegex;
-                console.log("MORO REGEX");
               } else {
                 filter = matchSearchFuncMoroPlain;
-                console.log("MORO PLAIN");
               }
             }
 
@@ -463,43 +461,53 @@
           }
 
 
-          // TODO: Only show `data` that matches this search query:
-          // Also, we might have to compute the alphabet on-demand here, since
+          // TODO: We might have to compute the alphabet on-demand here, since
           // our skips are going to be wrong.
-          console.log(this.props);
-
 
           var skip = this.props.skip;
           var pagesize = this.props.limit;
           var length = data.length;
 
-          skip = Math.max(0, Math.min(skip, length-pagesize));
-          var endskip = Math.max(0, length-pagesize);
-          var prevskip = Math.max(0, skip-pagesize);
-          var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
-          var page_controls = <div>
-            <div>
-              <UrlParameterLink update={{skip: 0}}>
-              {' |< '}
-              </UrlParameterLink>
-              <UrlParameterLink update={{skip: prevskip}}>
-              {' < '}
-              </UrlParameterLink>
-              <UrlParameterLink update={{skip: nextskip}}>
-              {' > '}
-              </UrlParameterLink>
-              <UrlParameterLink update={{skip: endskip}}>
-              {' >| '}
-              </UrlParameterLink>
+          if (length == 0) {
+            return <div> No Results Found </div>
+          } else {
+
+            skip = Math.max(0, Math.min(skip, length-pagesize));
+            var endskip = Math.max(0, length-pagesize);
+            var prevskip = Math.max(0, skip-pagesize);
+            var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
+            var lastshown = Math.max(0, Math.min(data.length, skip+pagesize));
+            var page_controls;
+            if (lastshown == data.length && skip == 0) {
+              page_controls = <div>
+                Showing {skip+1} - {lastshown}:
+                  </div>;
+            } else {
+              page_controls = <div>
+                <div>
+                  <UrlParameterLink update={{skip: 0}}>
+                  {' |< '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: prevskip}}>
+                  {' < '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: nextskip}}>
+                  {' > '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: endskip}}>
+                  {' >| '}
+                  </UrlParameterLink>
+                </div>
+                <br/>
+                Showing {skip+1} - {lastshown} (Out of {data.length}):
+              </div>;
+            }
+            return <div>
+              {page_controls}
+              <DictList data={_(data).drop(skip).take(pagesize).value()} />
+              {page_controls}
             </div>
-            <br/>
-            Showing {skip+1} - {skip + pagesize}:
-          </div>;
-          return <div>
-            {page_controls}
-            <DictList data={_(data).drop(skip).take(pagesize).value()} />
-            {page_controls}
-          </div>
+          }
         }
       });
 
@@ -553,7 +561,10 @@
               var letter = pair[0];
               var skip = pair[1];
               return <UrlParameterButton key={letter}
-                        update={{skip: skip}}
+                        update={{
+                          search: '',
+                          skip: skip
+                        }}
                         custom_style={{
                           paddingLeft: "8px",
                           paddingRight: "8px",
@@ -568,7 +579,7 @@
                <div className="ui grid">
                   <div className="sixteen wide column">
                     <h1>
-                    Concordance({data.length} total entries):
+                    Concordance:
                     </h1>
 
                     <div className="ui grid">
