@@ -1,9 +1,5 @@
       //Bottom of this doc sets up page structure and references components created above
       
-      //Global variable for moro_click database
-      var global_id_to_morpheme_definition = [];
-      var global_id_to_row = {};
-      
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       var Link = ReactRouter.Link;
@@ -53,51 +49,17 @@
 
       //===========================================Dictionary Code===========================================
 
-      //get id of all occurrences of the morpheme and definition pair from the global_id_to_morpheme_definition
-      function get_occurrence_ids(morpheme_click, definition_click) {
-        var results = [];
-        for (var i = 0; i < global_id_to_morpheme_definition.length; i++) {
-
-            var morpheme_definition_pair = global_id_to_morpheme_definition[i]["morpheme_definition"];
-                
-            var match_found = false;
-            for (var j = 0; j < morpheme_definition_pair.length; j++) {
-                if (morpheme_definition_pair[j]["moroword"] == morpheme_click && morpheme_definition_pair[j]["definition"] == definition_click) {
-                    match_found = true;
-                    break;
-                }
-            }
-            if (match_found) {
-                results = results.concat (global_id_to_morpheme_definition[i]["id"]);
-            //{sentence_id:dirtydata.rows[i].id, utterance_match:sentence.utterance, morphemes_match:sentence.morphemes, gloss_match:sentence.gloss, translation_match:sentence.translation});
-            }
-            
-        }
-        //console.log(results);
-        return results;
-      }
-
-      function get_rows(list_of_id) {
-        var results = [];
-        for (var i = 0; i<list_of_id.length; i++) {
-          results.push(global_id_to_row[list_of_id[i]])
-        }
-        return results
-      }
-
-
       //Segments a word into morphemes with glosses; morphemes from 'word' argument, glosses from 'glossword' argument
       function processword(word, glossword) {
         if (!word || !glossword) {
-          return [[], []]
+          return []
         }
         var results = [];
-        var click_database_result = [];
         var morphemes = word.split('-');
         var glosses = glossword.split('-');
         //if there is not the same number of dashes we aren't aligning the correct morphemes and gloss
         if (morphemes.length!=glosses.length) {
-          return [[], []];
+          return [];
         }
         var rootindex = -1;
         //identify verb roots so we can distinguish prefixes from suffixes
@@ -116,25 +78,21 @@
           var morpheme = removePunc(morphemes[i].toLowerCase());
           if (rootindex==-1) {
             results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
-            click_database_result.push({moroword:morpheme, definition:gloss});
           } else {
             if (i < rootindex) { 
              gloss = gloss+'-';
               morpheme = morpheme+'-';
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
-              click_database_result.push({moroword:morpheme, definition:gloss});
             } else if (i > rootindex) {
               gloss = '-'+gloss;
               morpheme = '-'+morpheme;
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
-              click_database_result.push({moroword:morpheme, definition:gloss});
             } else {
               results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
-              click_database_result.push({moroword:morpheme, definition:gloss});
             }
           }
         }
-        return [results, click_database_result];
+        return results
       }
 
     //merge two arrays and de-duplicate items
@@ -145,20 +103,6 @@
                 if(a[i]["word"] === a[j]["word"]) {
                     a.splice(j--, 1);
                     a[i]["count"] += 1 
-                }
-            }
-        }
-
-        return a;
-    }
-
-    //remove duplicate items for click morpheme_definition_pair_list
-    function arrayUniqueClick(array) {
-        var a = array.concat();
-        for(var i=0; i<a.length; ++i) {
-            for(var j=i+1; j<a.length; ++j) {
-                if(a[i]["moroword"] === a[j]["moroword"] && a[i]["definition"] === a[j]["definition"]) {
-                    a.splice(j--, 1);
                 }
             }
         }
@@ -199,21 +143,13 @@
             var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
             var morphemes = presplit_morphemes.split(/[ ]/);
             var gloss = sentence.gloss.split(/[ ]/);
-            
-            var morpheme_definition_pair_list = []; //store morpheme definition pair of a sentence
-
             if (gloss.length = morphemes.length) {
                 //process all morphemes and words
                 for (var ii = 0; ii < gloss.length; ii++) {
                     var morpheme = morphemes[ii]; 
                     var glossword = gloss[ii];
-                    var temp = processword(morpheme, glossword);
-                    var wordresults = temp[0];
-                    var click_database_results = temp[1];
+                    var wordresults = processword(morpheme, glossword);
                     var startIndex = 0;
-
-                    morpheme_definition_pair_list = morpheme_definition_pair_list.concat(click_database_results); //add in the morpheme definition pair
-
                     if (results.length == 0) {
                         results = results.concat(wordresults[startIndex]);
                         startIndex += 1;
@@ -233,28 +169,16 @@
                            results = results.concat(wordresults[k]);
                         }
                     }
-                }
-                //remove duplicate pair 
-                morpheme_definition_pair_list = arrayUniqueClick(morpheme_definition_pair_list);
-                //add the morpheme definition pair list for each sentence into the global variable
-                global_id_to_morpheme_definition.push({id:dirtydata.rows[i].id, morpheme_definition:morpheme_definition_pair_list});
-                global_id_to_row[dirtydata.rows[i].id] = dirtydata.rows[i];
+                } 
             }
         }
     //Print out result dict
-    //console.log(JSON.stringify(results))
-    //console.log(JSON.stringify(global_id_to_morpheme_definition))
+    //console.log("*********")
     processedDict = sortAndRemoveCount(results)
     //console.log("DONE")
     //return morphemes/glosses by moro morphemes
-    return _.sortBy(processedDict, function(j) {
-      var moroword = _.cloneDeep(j.moroword);
-      return _.map(moroword, function(x) {
-        if (x[0] == '-') {
-          return x.slice(1);
-        }
-        return x;
-      });
+    return _.sortBy (processedDict, function(j) {
+      return j.moroword;
     })
 }
 
@@ -274,6 +198,7 @@
         var testcase1 = {rows:[{value:{sentence:{morphemes:'a', gloss:'A'}}}]};
         assert([{moroword:['a'], definition:'a'}], processdata(testcase1));
         var testcase2 = {rows:[{value:{sentence: {morphemes:'a-b d', gloss:'A-B A'}}}]};
+        //console.log(JSON.stringify(processdata(testcase2)));
         assert([{moroword:['a','d'], definition:'a'}, {moroword:['b'], definition:'b'}], processdata(testcase2));
        var testcase3 = {rows:[{value:{sentence:{morphemes:'"loman-nǝŋ maj-anda l-a-fo,', gloss:'day-indef man-assoc.pl cll-rtc-past.aux'}}}]};
         assert([{moroword:['a-'], definition:'rtc-'},
@@ -289,7 +214,7 @@
         var testcase5 = {rows:[{value:{sentence:{morphemes:'b-a c', gloss:'B-A C'}}}]};
         assert([{moroword:['a'], definition:'a'}, {moroword:['b'], definition:'b'}, {moroword:['c'], definition:'c'}], processdata(testcase5));
         } 
-      //test_processdata();
+      test_processdata();
 
       // promise that resolves when sentence data is loaded and processed into morpheme dictionary
       var dictionary_data_promise = raw_data_promise.then(function(rawdata) {
@@ -300,32 +225,10 @@
       //ReactClass for rendering a definition
       var Definition = React.createClass({
         render: function() {
-          var morph_def_pairs = _.map(this.props.moroword, function(morpheme) {
-            return {
-              morpheme: morpheme,
-              definition: this.props.definition
-            }
-          }.bind(this));
-
-          var rendered_morphemes = _.map(morph_def_pairs, function(pair, i) {
-            var comma = ', ';
-            if (i == 0) {
-              comma = '';
-            }
-            var url = ('#/dict/concordance/' + pair.morpheme + '/' +
-                       pair.definition + '?' + CurrentMetaURI().query());
-            return <span key={pair.morpheme}>
-              {comma}
-              <a href={url}>
-                {pair.morpheme}
-              </a>
-            </span>;
-          })
-
           return (
             <div className="ui vertical segment">
               <h2>
-                {rendered_morphemes}
+                {_.join(this.props.moroword, ", ")}
               </h2>
               {this.props.definition}
             </div>
@@ -336,11 +239,8 @@
       var DictList = React.createClass({
         render: function() {
           var definitions=this.props.data.map(function(def) {
-            return ( <Definition key={def['moroword'] + ':' + def.definition}
-                                 moroword={def['moroword']}
-                                 definition={def['definition']}/> )
+            return ( <Definition moroword={def['moroword']} definition={def['definition']}/> )
           });
-
           return (
             <div>
               {definitions}
@@ -348,47 +248,6 @@
           );
         }
       });
-
-
-      // React container for rendering 1 page of dictionary entries, with a
-      // header and footer for page navigation.
-      var DictPage = React.createClass({
-        render: function() {
-          var data = this.props.data;
-          var skip = this.props.skip;
-          var pagesize = this.props.limit;
-          var length = data.length;
-
-          skip = Math.max(0, Math.min(skip, length-pagesize));
-          var endskip = Math.max(0, length-pagesize);
-          var prevskip = Math.max(0, skip-pagesize);
-          var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
-          var page_controls = <div>
-            <div className="ui buttons">
-              <UrlParameterButton update={{skip: 0}}>
-                  Begin
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: prevskip}}>
-                  Prev
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: nextskip}}>
-                  Next
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: endskip}}>
-                  End
-              </UrlParameterButton>
-            </div>
-            <br/>
-            Showing {skip+1} - {skip + pagesize}:
-          </div>;
-          return <div>
-            {page_controls}
-            <DictList data={_(data).drop(skip).take(pagesize).value()} />
-            {page_controls}
-          </div>
-        }
-      });
-
       // React container that will show a loading dimmer until the dictionary data is available; then renders definitions
       var DictBox = React.createClass({
         getInitialState: function() {
@@ -396,108 +255,25 @@
         },
         componentDidMount: function() {
           dictionary_data_promise.then(function(dictdata) {
-
-            // Find the first index of each letter, grouping numbers.
-            var alphabet = {}
-            _.forEach(dictdata, function consider_word(word, index) {
-              var c = _.get(word, ["moroword", 0, 0], "");
-              if (c == "-") {
-                c = _.get(word, ["moroword", 0, 1], "");
-              }
-              c = "" + c;
-              if (c.match(/[0-9]/)) {
-                c = '0-9';
-              }
-              if (c) {
-                if (alphabet[c] == undefined) {
-                  alphabet[c] = index;
-                }
-              }
-            });
-
-            this.setState(
-            {
-              data: dictdata,
-              alphabet: alphabet,
-              loaded: true
-            },
-            function() {
-              $(this.refs.right_half.getDOMNode()).sticky({});
-            }.bind(this));
-          }.bind(this));
+                this.setState({data: dictdata, loaded: true});
+              }.bind(this));
         },
         render: function() {
           if (this.state.loaded) {
-            var alphabet = this.state.alphabet;
-            var alphabet_buttons = _.map(_.toPairs(alphabet), function(pair) {
-              var letter = pair[0];
-              var skip = pair[1];
-              return <UrlParameterButton key={letter}
-                        update={{skip: skip}}
-                        custom_style={{
-                          paddingLeft: "8px",
-                          paddingRight: "8px",
-                        }}>
-                  {letter}
-                </UrlParameterButton>;
-            });
+            //TODO: rendering all definitions is slow, so we only render 10000 for now. Add pagination before rendering all. @HSande
             return (
              <div className='ui text container'>
-               <div className="ui grid">
-                  <div className="sixteen wide column">
-                    <h1>
-                    Concordance({this.state.data.length} total entries):
-                    </h1>
-                    <br/>
-                    <div className="ui buttons" style={{marginBottom: "5px"}}>
-                    {alphabet_buttons}
-                    </div>
-                  </div>
-                  <div className="eight wide column">
-                    <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
-                      <DictPage data={this.state.data} />
-                    </UrlParameterExtractor>
-                  </div>
-                  <div className="eight wide column">
-                    <div ref='right_half' className="ui sticky">
-                      <RouteHandler data={this.state.data}/>
-                    </div>
-                  </div>
-                </div>
+             <h1> </h1>
+               <h1> Concordance({this.state.data.length}):</h1>
+             <DictList data={this.state.data.slice(0,10000)}/> 
               </div>
             );
           }
           return <div className="ui active dimmer">
-                <div className="ui text loader">Loading</div>
-           </div>
+                  <div className="ui text loader">Loading</div>
+                 </div>
         }
       });
-
-      // Dictionary view with concordance.
-      var ConcordanceView = React.createClass({
-        render: function() {
-          var morpheme = this.props.params.morpheme 
-          var definition = this.props.params.definition
-          var list_of_occurrence = get_occurrence_ids(morpheme, definition);
-          var list_of_four_sentences = get_rows(list_of_occurrence)
-          var sentences = _.map(list_of_four_sentences, function(x) {
-            return <Sentence key={x.key} sentence={x.value.sentence} show_gloss={true} />
-          });
-          return <div className="ui segment">
-            Definition for: {this.props.params.morpheme} is {this.props.params.definition}
-            <br/>
-            Occurred at:<br/>
-            {sentences}
-          </div>
-        }
-      });
-
-      var DictView = React.createClass({
-        render: function() {
-          return <div> </div>
-        }
-      });
-
 
 //===================================================Text Page==================================
       // React Class that renders list of stories with links to story content pages (w/loading dimmer)
@@ -516,54 +292,13 @@
               return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
 
             });
-            return <div><ul>{results}</ul></div>;
+            return <div> <h1> </h1> <ul>{results}</ul></div>;
           }
           else {
             return <div className="ui active dimmer">
                   <div className="ui text loader">Loading</div>
                  </div>
           }
-        }
-      });
-
-      // A component to render a single sentence.
-      var Sentence = React.createClass({
-        render: function() {
-          var gloss = '';
-          var sentence = this.props.sentence;
-
-          if (this.props.only_utterance) {
-            return <div style={{marginBottom: "10px"}}>
-              {sentence.utterance}
-            </div>;
-          }
-
-          if (this.props.only_translation) {
-            return <div style={{marginBottom: "10px"}}>
-              {sentence.translation}
-            </div>;
-          }
-          
-          // interlinear gloss alignment
-          if (this.props.show_gloss) {
-            var morphemes = sentence.morphemes.split(' ');
-            var glosses = sentence.gloss.split(' ');
-            var pairs = _.zip(morphemes, glosses);
-            // render one inline block div containing morpheme and gloss per word
-            var glosses = _(pairs).map(function(x, i){
-              var morpheme = x[0];
-              var gloss = x[1];
-              return <div style={{display: "inline-block", marginRight: "5px"}} key={i}>{morpheme}<br/>{gloss}</div>
-            }.bind(this)).value();
-            gloss = <span>{glosses}<br/></span>;
-          }
-
-          // render utterance and translation
-          return <div style={{marginBottom: "10px"}}>
-            <b>{sentence.utterance}</b><br/>
-            {gloss}
-            {sentence.translation}
-          </div>
         }
       });
 
@@ -577,9 +312,7 @@
         getInitialState: function() {
           return {sentence: {data: [], loaded: false},
                   story: {data: [], loaded: false},
-                  show_gloss: false,
-                  story_view: false,
-                  };
+                  show_gloss: false}
         },
         //queue uploading of story and sentence data when this component is mounted
         componentDidMount: function() {
@@ -608,23 +341,7 @@
         },
         //toggles interlinear gloss or not
         toggleGloss: function() {
-          var new_show_gloss = !this.state.show_gloss;
-          var new_story_view = this.state.story_view;
-          if(new_show_gloss) {
-            new_story_view = false;
-          }
-          this.setState({show_gloss: new_show_gloss,
-                         story_view: new_story_view});
-        },
-        //toggles story view
-        toggleStoryView: function() {
-          var new_show_gloss = this.state.show_gloss;
-          var new_story_view = !this.state.story_view;
-          if(new_story_view) {
-            new_show_gloss = false;
-          }
-          this.setState({show_gloss: new_show_gloss,
-                         story_view: new_story_view});
+          this.setState({show_gloss: !this.state.show_gloss});
         },
         //renders component
         render: function() {
@@ -636,78 +353,41 @@
           }
           // process sentence data to render alignment of morphemes/glosses and show one clause per line
           // lodash chaining: https://lodash.com/docs#_
-          var sentences;
-          var story_sentences = _(this.state.sentence.data).filter(
+          var sentences = _(this.state.sentence.data).filter(
             // render sentences from this story
             function(x){
               return x.value.story == this.props.params.key;
             }.bind(this)
-          );
-          if (this.state.story_view) {
-            var sentence_rows = story_sentences.map(
-              function(x) {
-                  return [
-                    (
-                      <div key={x.key + "-1"} className="eight wide column"
-                           style={{"padding": "0px"}}>
-                        <Sentence sentence={x.value.sentence}
-                                  only_utterance="true" />
-                      </div>
-                    ),
-                    (
-                      <div key={x.key + "-2"} className="eight wide column"
-                           style={{"padding": "0px"}}>
-                        <Sentence sentence={x.value.sentence}
-                                  only_translation="true" />
-                      </div>
-                    )
-                  ];
-              }.bind(this)
-            ).value();
-
-            sentences = (
-             <div className='ui text container'
-                  style={{"padding-top": "14px"}}>
-               <div className="ui grid">
-                {sentence_rows}
-               </div>
-             </div>
-            );
-          } else {
-            sentences = story_sentences.map(
-              // how to render a sentence
-              function(x){
-                return <Sentence key={x.key}
-                          sentence={x.value.sentence}
-                          show_gloss={this.state.show_gloss}/>;
-              }.bind(this)
-            ).value();
-          }
+          ).map(
+            // how to render a sentence
+            function(x){
+              var gloss = '';
+              // interlinear gloss alignment
+              if (this.state.show_gloss) {
+                var morphemes = x.value.sentence.morphemes.split(' ');
+                var glosses = x.value.sentence.gloss.split(' ');
+                var pairs = _.zip(morphemes, glosses);
+                // render one inline block div containing morpheme and gloss per word
+                var glosses = _(pairs).map(function(x, i){
+                  var morpheme = x[0];
+                  var gloss = x[1];
+                  return <div style={{display: "inline-block", marginRight: "5px"}} key={i}>{morpheme}<br/>{gloss}</div>
+                }.bind(this)).value();
+                gloss = <span>{glosses}<br/></span>;
+              }
+              // render utterance and translation
+              return <div key={x.key} style={{marginBottom: "10px"}}>
+                <b>{x.value.sentence.utterance}</b><br/>
+                {gloss}
+                {x.value.sentence.translation}
+              </div>
+            }.bind(this)
+          ).value();
           // render story content page with title and checkbox to toggle interlinear gloss display
           return (
             <div>
               <h1>{this.getStory()}</h1>
-              <div className="ui form">
-
-                <div className="grouped fields">
-                  <label>View Options</label>
-
-                  <div className="field">
-                    <div className="ui slider checkbox">
-                      <input type="radio" name="throughput" checked={this.state.show_gloss} onChange={this.toggleGloss}> </input>
-                      <label>Show Glosses</label>
-                    </div>
-                  </div>
-
-                  <div className="field">
-                    <div className="ui slider checkbox">
-                      <input type="radio" name="throughput" checked={this.state.story_view} onChange={this.toggleStoryView}> </input>
-                      <label>Story View</label>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
+              <div style={{marginBottom: "15px"}}>Show Gloss: <input type="checkbox" checked={this.state.show_gloss} onChange={this.toggleGloss}/></div>
               {sentences}
             </div>
           );
@@ -720,37 +400,35 @@
          {render: function() {
 //=========================HOMEPAGE===============================
           return   <div className='ui text container'> 
-
 				
           		<h1 className='ui dividing header'>Moro Language Stories</h1>
-
-              <img className="ui medium right floated rounded image" src="./images/Nuba-berge.jpg"></img>
           
-          <p>This website contains a collection of texts and stories in the Moro language. The Moro language was born in the Nuba Mountains of Sudan, where most of its speakers still live. Today Moro is also spoken in Khartoum, Sudan, and by Moro people living around the world. Through the stories on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
-
+          <p>This website contains a collection of texts and stories in the Moro language. Moro is a language of the Nuba Mountains of Sudan, where the Moro people have lived since ancient times. Moro is a Kordofanian language, a subgroup of the Niger-Congo language family. Through the texts on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
           
-           <p>This page is also intended as a language resource for Moro people and researchers who are interested in learning more about the Moro language. The stories are a mixture of dialects, but often closely resemble the Wërria dialect, the same dialect in which the New Testament was written. As in all written Moro, tone is not marked in these stories. </p>
+           <p>This page is intended as a resource for Moro people as well as researchers who are interested in learning more about the Moro language. Written Moro is a mixture of dialects, but often closely resembles the Wërria dialect. As in all written Moro, tone is not marked in these stories.</p>
+           
+           <p>The development of this corpus was supported by a grant from the Hellman Fellows Fund.</p>
             
          	<h1 className='ui dividing header'>Project members</h1>
 
 
 			<h3> Angelo Naser (Author, Editor) </h3>
-        	<p> Born and raised in the Nuba Mountains, Angelo now works at the United Bible Society in Khartoum. </p> 
+        	<p> Born and raised in the village of Karkaria in the Nuba Mountains, Angelo now lives and works in Khartoum. Angelo is a member of the Moro Language Committee and is involved in the Moro literacy program. He works at the United Bible Society in Khartoum. </p> 
 
 			<h3> Peter Jenks (Editor) </h3>
-        	<p> Peter has studied the Moro language since 2005. He is an Assistant Professor at UC Berkeley</p> 
+        	<p> <a href="http://linguistics.berkeley.edu/~jenks/home.html">Peter</a> has studied the Moro language since 2005, much of his work in collaboration with the <a href='http://moro.ucsd.edu/'>Moro Language Project</a>. He is an Assistant Professor at UC Berkeley.</p> 
 
 			<h3> Hannah Sande (Editor) </h3>
-        	<p> Hannah is a graduate student in the UC Berkeley linguistics department. In addition to her work on Moro, Hannah has worked extensively on Guebie, an endangered Kru language spoken in the Ivory Coast. </p> 
+        	<p> <a href="http://linguistics.berkeley.edu/~hsande/">Hannah</a> is a PhD candidate in the UC Berkeley linguistics department. In addition to her work on Moro, Hannah has worked extensively on Guebie, an endangered Kru language spoken in the Ivory Coast. </p> 
 
 			<h3> Marcus Ewert </h3>
-        	<p> Marcus has helped linguists develop software for documentation. He works as a developer in the Bay Area.</p> 
+        	<p> <a href="http://www.marcushenryewert.com/#/">Marcus</a> is a software developer in the Bay Area who has provided assistance with several linguistic documentation projects.</p> 
 
 			<h3> Juwon Kim </h3>
         	<p> UC Berkeley Class of 2018, Juwon is a double major in linguistics and computer science. </p> 
 
 			<h3> Maytas Monsereenusorn </h3>
-        	<p> UC Berkeley Class of 2016, Maytas is a double major in economics and computer science. </p> 
+        	<p> UC Berkeley Class of 2016, Maytas is a double major in computer science and economics. </p> 
 
           </div>
           }
@@ -784,15 +462,10 @@
       // enables the single-page web app design
       var routes = <Route handler={App}>
         <Route path = '/' handler={Homepage} name = 'Homepage' />
-        <Route path = '/dict' handler={DictBox} name = 'Dictionary'>
-          <Route path = '/dict'
-                 handler={DictView} name='Dict' />
-          <Route path = '/dict/concordance/:morpheme/:definition'
-                 handler={ConcordanceView} name = 'Concordance' />
-        </Route>
+        <Route path = '/dict' handler={DictBox} name = 'Dictionary'/>
         <Route path = '/text' handler={TextBox} name = 'Texts' />
         <Route path = '/text/story/:key' handler={StoryView} name = 'Story' />
-      </Route>;
+        </Route>;
       ReactRouter.run(
         routes, function(Handler) {
           React.render(<Handler/>, document.getElementById('content'))
