@@ -3,6 +3,8 @@
       //Global variable for moro_click database
       var global_id_to_morpheme_definition = [];
       var global_id_to_row = {};
+      var global_whole_data;
+      var firstLoad = true;
       
       //These are imports from ReactRouter o.13.x
       //docs: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -16,8 +18,15 @@
 
       // Endpoint for all up-to-date sentence data from all stories.
       var sentence_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_sentences';
+
+      // Uncomment the following line for stale data, but a quick development cycle:
+      // var sentence_url = 'sentences.json';
+
       // Endpoint mapping story id to story name
       var story_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_stories';
+
+      // Uncomment the following line for stale data, but a quick development cycle:
+      // var story_url = 'stories.json';
 
       // Promise that is resolved once the sentence data is loaded
       var raw_data_promise = new Promise(function(resolve, reject) {
@@ -114,6 +123,9 @@
         for (var i = 0; i < glosses.length; i++) {
           var gloss = removePunc(glosses[i].toLowerCase());
           var morpheme = removePunc(morphemes[i].toLowerCase());
+          if (gloss.match(/^[0-9]*$/)){
+            continue
+          }
           if (rootindex==-1) {
             results.push({moroword:[{word:morpheme, count:1}], definition:gloss});
             click_database_result.push({moroword:morpheme, definition:gloss});
@@ -197,8 +209,8 @@
             // split on spaces and remove punctuation from morphemes line
             var sentence = dirtydata.rows[i].value.sentence; 
             var presplit_morphemes = sentence.morphemes.replace(/[",.?!'()]/g, '');
-            var morphemes = presplit_morphemes.split(/[ ]/);
-            var gloss = sentence.gloss.split(/[ ]/);
+            var morphemes = presplit_morphemes.split(/[ ][ ]*/);
+            var gloss = sentence.gloss.split(/[ ][ ]*/);
             
             var morpheme_definition_pair_list = []; //store morpheme definition pair of a sentence
 
@@ -350,49 +362,165 @@
       });
 
 
+      //SEARCH CODE
+
+      //matchSearchFunc for definition to searchTerm (EngPlain)
+      function matchSearchFuncEngPlain (searchTerm) {
+        return function(element) {
+          if (element.definition == searchTerm) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+
+      //matchSearchFunc for definition to searchTerm (EngRegex)
+      function matchSearchFuncEngRegex (searchTerm) {
+        return function(element) {
+          var re = ".*" + searchTerm + ".*";
+          if (element.definition.match(re)) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+
+      //matchSearchFunc for moroword to searchTerm (MoroPlain)
+      function matchSearchFuncMoroPlain (searchTerm) {
+        return function(element) {
+          return findMoroWordInArrayMoroPlain(element.moroword, searchTerm)
+        }
+      }
+
+      //matchSearchFunc healper for moroword to searchTerm (without regrex)
+      function findMoroWordInArrayMoroPlain (categories, moroword) {
+        var found = false;
+        for (i = 0; i < categories.length && !found; i++) {
+          if (categories[i] === moroword) {
+            found = true;
+          }
+        }
+        return found
+      }
+
+      //matchSearchFunc for moroword to searchTerm (MoroRegex)
+      function matchSearchFuncMoroRegex (searchTerm) {
+        return function(element) {
+          return findMoroWordInArrayMoroRegex(element.moroword, searchTerm)
+        }
+      }
+
+      //matchSearchFunc healper for moroword to searchTerm (with regrex)
+      function findMoroWordInArrayMoroRegex (categories, moroword) {
+        var found = false;
+        for (i = 0; i < categories.length && !found; i++) {
+          // if (categories[i] === moroword) {
+          var re = ".*" + moroword + ".*";
+          if (categories[i].match(re)) {
+            found = true;
+          }
+        }
+        return found
+      }
+
+
       // React container for rendering 1 page of dictionary entries, with a
       // header and footer for page navigation.
       var DictPage = React.createClass({
         render: function() {
+
+          if (firstLoad == true) {
+            global_whole_data = this.props.data;
+            firstLoad = false;
+          }
+
           var data = this.props.data;
+          var search = this.props.search;
+          if (search == "") {
+            data = global_whole_data;
+          } else {
+            var filter;
+
+            if (this.props.search_language == 'eng') {
+              if(this.props.regex) {
+                filter = matchSearchFuncEngRegex;
+              } else {
+                filter = matchSearchFuncEngPlain;
+              }
+            } else {
+              if(this.props.regex) {
+                filter = matchSearchFuncMoroRegex;
+              } else {
+                filter = matchSearchFuncMoroPlain;
+              }
+            }
+
+            data = data.filter(filter(search));
+          }
+
+
+          // TODO: We might have to compute the alphabet on-demand here, since
+          // our skips are going to be wrong.
+
           var skip = this.props.skip;
           var pagesize = this.props.limit;
           var length = data.length;
 
-          skip = Math.max(0, Math.min(skip, length-pagesize));
-          var endskip = Math.max(0, length-pagesize);
-          var prevskip = Math.max(0, skip-pagesize);
-          var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
-          var page_controls = <div>
-            <div className="ui buttons">
-              <UrlParameterButton update={{skip: 0}}>
-                  Begin
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: prevskip}}>
-                  Prev
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: nextskip}}>
-                  Next
-              </UrlParameterButton>
-              <UrlParameterButton update={{skip: endskip}}>
-                  End
-              </UrlParameterButton>
+          if (length == 0) {
+            return <div> No Results Found </div>
+          } else {
+
+            skip = Math.max(0, Math.min(skip, length-pagesize));
+            var endskip = Math.max(0, length-pagesize);
+            var prevskip = Math.max(0, skip-pagesize);
+            var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
+            var lastshown = Math.max(0, Math.min(data.length, skip+pagesize));
+            var page_controls;
+            if (lastshown == data.length && skip == 0) {
+              page_controls = <div>
+                Showing {skip+1} - {lastshown}:
+                  </div>;
+            } else {
+              page_controls = <div>
+                <div>
+                  <UrlParameterLink update={{skip: 0}}>
+                  {' |< '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: prevskip}}>
+                  {' < '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: nextskip}}>
+                  {' > '}
+                  </UrlParameterLink>
+                  <UrlParameterLink update={{skip: endskip}}>
+                  {' >| '}
+                  </UrlParameterLink>
+                </div>
+                <br/>
+                Showing {skip+1} - {lastshown} (Out of {data.length}):
+              </div>;
+            }
+            return <div>
+              {page_controls}
+              <DictList data={_(data).drop(skip).take(pagesize).value()} />
+              {page_controls}
             </div>
-            <br/>
-            Showing {skip+1} - {skip + pagesize}:
-          </div>;
-          return <div>
-            {page_controls}
-            <DictList data={_(data).drop(skip).take(pagesize).value()} />
-            {page_controls}
-          </div>
+          }
         }
       });
 
       // React container that will show a loading dimmer until the dictionary data is available; then renders definitions
       var DictBox = React.createClass({
         getInitialState: function() {
-          return {data: [], loaded: false};
+          return {
+            data: [],
+            loaded: false,
+          };
+        },
+        clearSkip : function() {
+          UpdateQuery({'skip': 0});
         },
         componentDidMount: function() {
           dictionary_data_promise.then(function(dictdata) {
@@ -433,7 +561,10 @@
               var letter = pair[0];
               var skip = pair[1];
               return <UrlParameterButton key={letter}
-                        update={{skip: skip}}
+                        update={{
+                          search: '',
+                          skip: skip
+                        }}
                         custom_style={{
                           paddingLeft: "8px",
                           paddingRight: "8px",
@@ -441,26 +572,41 @@
                   {letter}
                 </UrlParameterButton>;
             });
+
+            var data = this.state.data;
             return (
              <div className='ui text container'>
                <div className="ui grid">
                   <div className="sixteen wide column">
                     <h1>
-                    Concordance({this.state.data.length} total entries):
+                    Concordance:
                     </h1>
-                    <br/>
-                    <div className="ui buttons" style={{marginBottom: "5px"}}>
-                    {alphabet_buttons}
+
+                    <div className="ui grid">
+                      <div className="sixteen wide column">
+                          <SearchBox renderParameters={true}
+                                     onGo={this.clearSkip}/>
+                      </div>
+                      <div className="sixteen wide column">
+                          <div className="ui buttons" style={{marginBottom: "5px"}}>
+                          {alphabet_buttons}
+                          </div>
+                      </div>
                     </div>
+
                   </div>
                   <div className="eight wide column">
-                    <UrlParameterExtractor defaults={{skip: 0, limit: 50}}>
-                      <DictPage data={this.state.data} />
+                    <UrlParameterExtractor defaults={{skip: 0,
+                                                      limit: 50,
+                                                      search: '',
+                                                      regex: false,
+                                                      search_language: 'moro'}}>
+                      <DictPage data={data} />
                     </UrlParameterExtractor>
                   </div>
                   <div className="eight wide column">
                     <div ref='right_half' className="ui sticky">
-                      <RouteHandler data={this.state.data}/>
+                      <RouteHandler data={data}/>
                     </div>
                   </div>
                 </div>
@@ -498,13 +644,12 @@
         }
       });
 
-
 //===================================================Text Page==================================
       // React Class that renders list of stories with links to story content pages (w/loading dimmer)
       var TextBox = React.createClass({
         getInitialState: function() {
           return {data: [], loaded: false};
-        },
+       },
         componentDidMount: function() {
           story_data_promise.then(function(rawdata){
             this.setState({data: rawdata, loaded: true});
@@ -513,7 +658,7 @@
         render: function() {
           if (this.state.loaded){
             var results = this.state.data.rows.map(function (x) {
-              return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link></li>
+              return <li key={x.key}><Link to='Story' params={{key: x.key}}>{x.value.name}</Link> by {x.value.author}</li>
 
             });
             return <div><ul>{results}</ul></div>;
@@ -595,16 +740,24 @@
         loaded: function() {
           return this.state.story.loaded && this.state.sentence.loaded;
         },
-        //return name of story by searching story data for this story's id
+        // Get the story object
         getStory: function() {
           var arr = this.state.story.data;
           for (var i = 0; i < arr.length; i++) {
             var o = arr[i];
             if (o.key == this.props.params.key) {
-              return  o.value.name;
+              return  o.value;
             }
           }
-          return "<Unknown Story>";
+          return {};
+        },
+        //return name of story by searching story data for this story's id
+        getStoryName: function() {
+          return _.get(this.getStory(), 'name', "<Unknown Story>");
+        },
+        //return author of story by searching story data for this story's id
+        getStoryAuthor: function() {
+          return _.get(this.getStory(), 'author', "");
         },
         //toggles interlinear gloss or not
         toggleGloss: function() {
@@ -669,6 +822,14 @@
              <div className='ui text container'
                   style={{"padding-top": "14px"}}>
                <div className="ui grid">
+                 <div className="eight wide column"
+                      style={{"padding": "0px"}}>
+                      <h2>Moro</h2>
+                 </div>
+                 <div className="eight wide column"
+                      style={{"padding": "0px"}}>
+                      <h2>English</h2>
+                 </div>
                 {sentence_rows}
                </div>
              </div>
@@ -686,8 +847,7 @@
           // render story content page with title and checkbox to toggle interlinear gloss display
           return (
             <div>
-              <h1>{this.getStory()}</h1>
-              <div className="ui form">
+              <h1>{this.getStoryName()}</h1> by {this.getStoryAuthor()} <div className="ui form">
 
                 <div className="grouped fields">
                   <label>View Options</label>
@@ -726,46 +886,76 @@
 
               <img className="ui medium right floated rounded image" src="./images/Nuba-berge.jpg"></img>
           
-          <p>This website contains a collection of texts and stories in the Moro language. The Moro language was born in the Nuba Mountains of Sudan, where most of its speakers still live. Today Moro is also spoken in Khartoum, Sudan, and by Moro people living around the world. Through the stories on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
-
+          <p>This website contains a collection of texts and stories in the Moro language. Moro is a language of the Nuba Mountains of Sudan, where the Moro people have lived since ancient times. Moro is a Kordofanian language, a subgroup of the Niger-Congo language family. Through the texts on this page you can learn more about the Moro, their culture, and their traditional stories. </p> 
           
-           <p>This page is also intended as a language resource for Moro people and researchers who are interested in learning more about the Moro language. The stories are a mixture of dialects, but often closely resemble the Wërria dialect, the same dialect in which the New Testament was written. As in all written Moro, tone is not marked in these stories. </p>
+           <p>This page is intended as a resource for Moro people as well as researchers who are interested in learning more about the Moro language. Written Moro is a mixture of dialects, but often closely resembles the Wërria dialect. As in all written Moro, tone is not marked in these stories.</p>
+           
+           <p>The development of this corpus was supported by a grant from the Hellman Fellows Fund.</p>
             
          	<h1 className='ui dividing header'>Project members</h1>
 
 
 			<h3> Angelo Naser (Author, Editor) </h3>
-        	<p> Born and raised in the Nuba Mountains, Angelo now works at the United Bible Society in Khartoum. </p> 
+        	<p> Born and raised in the village of Karkaria in the Nuba Mountains, Angelo now lives and works in Khartoum. Angelo is a member of the Moro Language Committee and is involved in the Moro literacy program. He works at the United Bible Society in Khartoum. </p> 
 
 			<h3> Peter Jenks (Editor) </h3>
-        	<p> Peter has studied the Moro language since 2005. He is an Assistant Professor at UC Berkeley</p> 
+        	<p> <a href="http://linguistics.berkeley.edu/~jenks/home.html">Peter</a> has studied the Moro language since 2005, much of his work in collaboration with the <a href='http://moro.ucsd.edu/'>Moro Language Project</a>. He is an Assistant Professor at UC Berkeley.</p> 
 
 			<h3> Hannah Sande (Editor) </h3>
-        	<p> Hannah is a graduate student in the UC Berkeley linguistics department. In addition to her work on Moro, Hannah has worked extensively on Guebie, an endangered Kru language spoken in the Ivory Coast. </p> 
+        	<p> <a href="http://linguistics.berkeley.edu/~hsande/">Hannah</a> is a PhD candidate in the UC Berkeley linguistics department. In addition to her work on Moro, Hannah has worked extensively on Guebie, an endangered Kru language spoken in the Ivory Coast. </p> 
 
 			<h3> Marcus Ewert </h3>
-        	<p> Marcus has helped linguists develop software for documentation. He works as a developer in the Bay Area.</p> 
+        	<p> <a href="http://www.marcushenryewert.com/#/">Marcus</a> is a software developer in the Bay Area who has provided assistance with several linguistic documentation projects.</p> 
 
 			<h3> Juwon Kim </h3>
         	<p> UC Berkeley Class of 2018, Juwon is a double major in linguistics and computer science. </p> 
 
 			<h3> Maytas Monsereenusorn </h3>
-        	<p> UC Berkeley Class of 2016, Maytas is a double major in economics and computer science. </p> 
+        	<p> UC Berkeley Class of 2016, Maytas is a double major in computer science and economics. </p> 
 
           </div>
           }
          }
       )
 
+//=========================Search Page===============================
+      var SearchPane = React.createClass({
+        render: function() {
+          return (
+            <div>
+              <h1> </h1>
+              <center>
+                <SearchBox />
+              </center>
+              <div>
+                Results <br/>
+                Sentences here that match {this.props.search}.
+              </div>
+            </div>
+          );
+        }
+      });
+
+      var SearchPage = React.createClass({
+        render: function() {
+          return (
+            <UrlParameterExtractor defaults={{search: ''}}>
+              <SearchPane />
+            </UrlParameterExtractor>
+          );
+        }
+      });
+
       //render page template using ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       var App = React.createClass(
         {render: function() {
           return <div className='ui main text container'> 
           <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
-       	   		<div className='ui text container'>
-            		<Link className='item' to='Homepage' >About</Link> 
-            		<Link className='item' to='Texts' >Texts</Link>
-            		<Link className='item' to='Dictionary' >Concordance</Link>
+              <div className='ui text container'>
+                <Link className='item' to='Homepage' >About</Link> 
+                <Link className='item' to='Texts' >Texts</Link>
+                <Link className='item' to='Dictionary' >Concordance</Link>
+                <Link className='item' to='Search' >Search</Link>
         		</div>
           </div>
            		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
@@ -783,15 +973,16 @@
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
       // enables the single-page web app design
       var routes = <Route handler={App}>
-        <Route path = '/' handler={Homepage} name = 'Homepage' />
-        <Route path = '/dict' handler={DictBox} name = 'Dictionary'>
+        <Route path = '/' handler={Homepage} name='Homepage' />
+        <Route path = '/dict' handler={DictBox} name='Dictionary'>
           <Route path = '/dict'
                  handler={DictView} name='Dict' />
           <Route path = '/dict/concordance/:morpheme/:definition'
-                 handler={ConcordanceView} name = 'Concordance' />
+                 handler={ConcordanceView} name='Concordance' />
         </Route>
-        <Route path = '/text' handler={TextBox} name = 'Texts' />
-        <Route path = '/text/story/:key' handler={StoryView} name = 'Story' />
+        <Route path = '/text' handler={TextBox} name='Texts' />
+        <Route path = '/text/story/:key' handler={StoryView} name='Story' />
+        <Route path = '/search' handler={SearchPage} name='Search' />
       </Route>;
       ReactRouter.run(
         routes, function(Handler) {
