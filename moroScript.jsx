@@ -918,6 +918,21 @@
          }
       )
 
+      var Glosspage = React.createClass(
+             
+         {render: function() {
+//=========================GLOSS PAGE===============================
+          return   <div className='ui text container'> 
+
+				
+          		<h1 className='ui dividing header'>Glossing Info</h1>
+
+          <p>Glossy McGlossface. Glosserson GlossyWass</p> 
+          </div>
+          }
+         }
+      )
+
 //=========================Search Page===============================
       var SearchPane = React.createClass({
         render: function() {
@@ -947,8 +962,15 @@
       });
 
       //render page template using ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
-      var App = React.createClass(
-        {render: function() {
+      var App = React.createClass({
+        componentDidMount: function() {
+          $(React.findDOMNode(this.refs.glossingPopupActivator)).popup({
+            hoverable: true,
+            inline: true,
+            position: 'bottom right',
+          });
+        },
+        render: function() {
           return <div className='ui main text container'> 
           <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
               <div className='ui text container'>
@@ -956,18 +978,28 @@
                 <Link className='item' to='Texts' >Texts</Link>
                 <Link className='item' to='Dictionary' >Concordance</Link>
                 <Link className='item' to='Search' >Search</Link>
-        		</div>
+              </div>
+            <Link to='Glosses' className='right item' ref='glossingPopupActivator'>Glossing
+                <i className="dropdown icon"></i>
+            </Link>
+            <div ref='glossingPopup' className='ui popup bottom left transition hidden'>
+                <div className='ui three column center aligned grid'>
+                  <div className='column'>1</div>
+                  <div className='column'>2</div>
+                  <div className='column'>3</div>
+                </div>
+            </div>
           </div>
            		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
           			<div className='ui text container'>
             			<Link className='item' to='Homepage' >About</Link> 
             			<Link className='item' to='Texts' >Texts</Link>
             			<Link className='item' to='Dictionary' >Concordance</Link>
-        			</div>
+        			 </div>
           		</div>
 		 <RouteHandler/> </div>
         }
-        });
+      });
 
 
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -983,6 +1015,7 @@
         <Route path = '/text' handler={TextBox} name='Texts' />
         <Route path = '/text/story/:key' handler={StoryView} name='Story' />
         <Route path = '/search' handler={SearchPage} name='Search' />
+        <Route path = '/glosses' handler={Glosspage} name='Glosses' />
       </Route>;
       ReactRouter.run(
         routes, function(Handler) {
