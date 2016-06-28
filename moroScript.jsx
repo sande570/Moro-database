@@ -20,13 +20,13 @@
       var sentence_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_sentences';
 
       // Uncomment the following line for stale data, but a quick development cycle:
-      // var sentence_url = 'sentences.json';
+      //var sentence_url = 'sentences.json';
 
       // Endpoint mapping story id to story name
       var story_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_stories';
 
       // Uncomment the following line for stale data, but a quick development cycle:
-      // var story_url = 'stories.json';
+      //var story_url = 'stories.json';
 
       // Promise that is resolved once the sentence data is loaded
       var raw_data_promise = new Promise(function(resolve, reject) {
@@ -59,6 +59,20 @@
 
           })
       });
+
+      var sentence_data_promise = Promise.all([raw_data_promise,
+                                               story_data_promise]).then(
+        function(x) {
+          var sentence_data = x[0];
+          var story_data = x[1];
+          var stories = _.reduce(story_data.rows, function(acc, x) {
+            acc[x.key] = 1;
+            return acc;
+          }, {})
+          return _.filter(sentence_data.rows, function(x) {return stories[x.key[0]] == 1;})
+        }
+      );
+
 
       //===========================================Dictionary Code===========================================
 
@@ -114,7 +128,7 @@
           var gloss = glosses[i];
           //all verb root morphemes end with .rt or .aux
           //TODO: does this include be.loc, be.1d, be.2d, etc? @HSande for details
-          if (_.endsWith(gloss, '.rt') || _.endsWith(gloss, '.aux')) {
+          if (_.startsWith(gloss, 'be.') || _.endsWith(gloss, '.rt') || _.endsWith(gloss, '.aux')) {
             rootindex = i;
           }
         }
@@ -304,8 +318,8 @@
       //test_processdata();
 
       // promise that resolves when sentence data is loaded and processed into morpheme dictionary
-      var dictionary_data_promise = raw_data_promise.then(function(rawdata) {
-        return processdata(rawdata); 
+      var dictionary_data_promise = sentence_data_promise.then(function(data) {
+        return processdata({rows: data}); 
       });
 
       //Dictionary viewing code
@@ -472,40 +486,11 @@
             return <div> No Results Found </div>
           } else {
 
-            skip = Math.max(0, Math.min(skip, length-pagesize));
-            var endskip = Math.max(0, length-pagesize);
-            var prevskip = Math.max(0, skip-pagesize);
-            var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
-            var lastshown = Math.max(0, Math.min(data.length, skip+pagesize));
-            var page_controls;
-            if (lastshown == data.length && skip == 0) {
-              page_controls = <div>
-                Showing {skip+1} - {lastshown}:
-                  </div>;
-            } else {
-              page_controls = <div>
-                <div>
-                  <UrlParameterLink update={{skip: 0}}>
-                  {' |< '}
-                  </UrlParameterLink>
-                  <UrlParameterLink update={{skip: prevskip}}>
-                  {' < '}
-                  </UrlParameterLink>
-                  <UrlParameterLink update={{skip: nextskip}}>
-                  {' > '}
-                  </UrlParameterLink>
-                  <UrlParameterLink update={{skip: endskip}}>
-                  {' >| '}
-                  </UrlParameterLink>
-                </div>
-                <br/>
-                Showing {skip+1} - {lastshown} (Out of {data.length}):
-              </div>;
-            }
+            pc = GetPaginationControls(skip, length, pagesize);
             return <div>
-              {page_controls}
-              <DictList data={_(data).drop(skip).take(pagesize).value()} />
-              {page_controls}
+              {pc.page_controls}
+              <DictList data={_(data).drop(pc.skip).take(pagesize).value()} />
+              {pc.page_controls}
             </div>
           }
         }
@@ -732,8 +717,8 @@
             this.setState({story:{data: rawdata.rows, loaded: true}});
           }.bind(this));
 
-          raw_data_promise.then(function(rawdata){
-            this.setState({sentence:{data: rawdata.rows, loaded: true}});
+          sentence_data_promise.then(function(sentences){
+            this.setState({sentence:{data: sentences, loaded: true}});
           }.bind(this));
         },
         //only ready to display story when story and sentence data have loaded
@@ -918,19 +903,128 @@
          }
       )
 
+      var Glosspage = React.createClass(
+             
+         {render: function() {
+//=========================GLOSS PAGE===============================
+          return   <div className='ui text container'> 
+
+				
+          		<h1 className='ui dividing header'>Glossing Info</h1>
+
+          <p>Glossy McGlossface. Glosserson GlossyWass</p> 
+          </div>
+          }
+         }
+      )
+
 //=========================Search Page===============================
       var SearchPane = React.createClass({
+        getInitialState: function() {
+          return {
+            sentence: {data: [], loaded: false},
+            story: {data: [], loaded: false}
+          };
+        },
+
+        //queue uploading of story and sentence data when this component is mounted
+        componentDidMount: function() {
+          story_data_promise.then(function(rawdata){
+            this.setState({story:{data: rawdata.rows, loaded: true}});
+          }.bind(this));
+
+          sentence_data_promise.then(function(sentences){
+            this.setState({sentence:{data: sentences, loaded: true}});
+          }.bind(this));
+        },
+
+        //only ready to display story when story and sentence data have loaded
+        loaded: function() {
+          return this.state.story.loaded && this.state.sentence.loaded;
+        },
+
+        render_results: function(stories, results) {
+          var results_per_story = _.reduce(results, function(acc, x) {
+            var new_list = _.get(acc, x.key[0], []);
+            new_list.push(x);
+            acc[x.key[0]] = new_list;
+            return acc;
+          }, {})
+          var rendered_results = _(_.toPairs(results_per_story)).map(
+            function(x) {
+              var story = x[0];
+              var sentences = x[1];
+              var rendered_sentences = _.map(sentences, function(x) {
+                return <Sentence key={x.key}
+                                 sentence={x.value.sentence}
+                                 show_gloss={true} />
+              });
+
+              var storyname = _.get(_.filter(stories, function(x) {
+                return x.key == story;
+              }), '[0].value.name', 'UNKNOWN STORY');
+
+              return <div key={story}>
+                <b>Results from <Link to='Story' params={{key: story}}>{storyname}</Link> :</b>
+                {rendered_sentences}
+              </div>;
+            }
+          ).value();
+          return rendered_results;
+        },
+
+        clearSkip : function() {
+          UpdateQuery({'skip': 0});
+        },
+
         render: function() {
+          function matchesAnySentence(x) {
+            return (
+              x.value.sentence.translation.search(search_regex) != -1 ||
+              x.value.sentence.gloss.search(search_regex) != -1 ||
+              x.value.sentence.utterance.search(search_regex) != -1 ||
+              x.value.sentence.morphemes.search(search_regex) != -1
+            )
+          }
+
+          if (!this.loaded()) {
+            return <div className="ui active dimmer">
+              <div className="ui text loader">Loading</div>
+            </div>;
+          }
+          var search_regex = new RegExp(this.props.search);
+          var results = _.filter(this.state.sentence.data, matchesAnySentence);
+
+          var skip = this.props.skip;
+          var pagesize = this.props.limit;
+          var length = results.length;
+
+          pc = GetPaginationControls(skip, length, pagesize);
+
+          results = _.take(_.drop(results, pc.skip), pagesize);
+
+          var rendered_results;
+          if (results.length > 0) {
+              var rr = this.render_results(this.state.story.data,
+                                                         results);
+              rendered_results = <div>
+                {pc.page_controls}
+                {rr}
+                {pc.page_controls}
+              </div>
+          } else {
+              rendered_results = <div>
+                No Matches Found.
+              </div>
+          }
+
           return (
             <div>
               <h1> </h1>
               <center>
-                <SearchBox />
+                <SearchBox onGo={this.clearSkip}/>
               </center>
-              <div>
-                Results <br/>
-                Sentences here that match {this.props.search}.
-              </div>
+              {rendered_results}
             </div>
           );
         }
@@ -939,7 +1033,11 @@
       var SearchPage = React.createClass({
         render: function() {
           return (
-            <UrlParameterExtractor defaults={{search: ''}}>
+            <UrlParameterExtractor defaults={{
+              skip: 0,
+              limit: 100,
+              search: ''
+            }}>
               <SearchPane />
             </UrlParameterExtractor>
           );
@@ -947,8 +1045,15 @@
       });
 
       //render page template using ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
-      var App = React.createClass(
-        {render: function() {
+      var App = React.createClass({
+        componentDidMount: function() {
+          $(React.findDOMNode(this.refs.glossingPopupActivator)).popup({
+            hoverable: true,
+            inline: true,
+            position: 'bottom right',
+          });
+        },
+        render: function() {
           return <div className='ui main text container'> 
           <div className='ui borderless main menu fixed' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
               <div className='ui text container'>
@@ -956,18 +1061,28 @@
                 <Link className='item' to='Texts' >Texts</Link>
                 <Link className='item' to='Dictionary' >Concordance</Link>
                 <Link className='item' to='Search' >Search</Link>
-        		</div>
+              </div>
+            <Link to='Glosses' className='right item' ref='glossingPopupActivator'>Glossing
+                <i className="dropdown icon"></i>
+            </Link>
+            <div ref='glossingPopup' className='ui popup bottom left transition hidden'>
+                <div className='ui three column center aligned grid'>
+                  <div className='column'>1</div>
+                  <div className='column'>2</div>
+                  <div className='column'>3</div>
+                </div>
+            </div>
           </div>
            		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
           			<div className='ui text container'>
             			<Link className='item' to='Homepage' >About</Link> 
             			<Link className='item' to='Texts' >Texts</Link>
             			<Link className='item' to='Dictionary' >Concordance</Link>
-        			</div>
+        			 </div>
           		</div>
 		 <RouteHandler/> </div>
         }
-        });
+      });
 
 
       // set up routes for ReactRouter: https://github.com/rackt/react-router/blob/0.13.x/docs/guides/overview.md
@@ -983,6 +1098,7 @@
         <Route path = '/text' handler={TextBox} name='Texts' />
         <Route path = '/text/story/:key' handler={StoryView} name='Story' />
         <Route path = '/search' handler={SearchPage} name='Search' />
+        <Route path = '/glosses' handler={Glosspage} name='Glosses' />
       </Route>;
       ReactRouter.run(
         routes, function(Handler) {

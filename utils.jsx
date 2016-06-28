@@ -23,6 +23,43 @@ function GetQueryString() {
   return current_uri.search(true);
 }
 
+function GetPaginationControls(skip, length, pagesize) {
+  skip = Math.max(0, Math.min(skip, length-pagesize));
+  var endskip = Math.max(0, length-pagesize);
+  var prevskip = Math.max(0, skip-pagesize);
+  var nextskip = Math.max(0, Math.min(length-pagesize, skip+pagesize));
+  var lastshown = Math.max(0, Math.min(length, skip+pagesize));
+  var page_controls;
+  if (lastshown == length && skip == 0) {
+    page_controls = <div>
+      Showing {skip+1} - {lastshown}:
+        </div>;
+  } else {
+    page_controls = <div>
+      <div>
+        <UrlParameterLink update={{skip: 0}}>
+        {' |< '}
+        </UrlParameterLink>
+        <UrlParameterLink update={{skip: prevskip}}>
+        {' < '}
+        </UrlParameterLink>
+        <UrlParameterLink update={{skip: nextskip}}>
+        {' > '}
+        </UrlParameterLink>
+        <UrlParameterLink update={{skip: endskip}}>
+        {' >| '}
+        </UrlParameterLink>
+      </div>
+      <br/>
+      Showing {skip+1} - {lastshown} (Out of {length}):
+    </div>;
+  }
+  return {
+    skip: skip,
+    page_controls: page_controls
+  }
+}
+
 var SetQuery = function(object) {
   if (object != GetQuery()) {
     var current_uri = CurrentMetaURI();
