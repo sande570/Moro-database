@@ -128,7 +128,7 @@
           var gloss = glosses[i];
           //all verb root morphemes end with .rt or .aux
           //TODO: does this include be.loc, be.1d, be.2d, etc? @HSande for details
-          if (_.endsWith(gloss, '.rt') || _.endsWith(gloss, '.aux')) {
+          if (_.startsWith(gloss, 'be.') || _.endsWith(gloss, '.rt') || _.endsWith(gloss, '.aux')) {
             rootindex = i;
           }
         }
