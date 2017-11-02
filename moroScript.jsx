@@ -136,7 +136,12 @@
         //example: g-a-s-o; clg-rtc-eat.rt-pfv = [g-, a-, s, -o]; [clg-, rtc-, eat.rt, -pfv]
         for (var i = 0; i < glosses.length; i++) {
           var gloss = removePunc(glosses[i].toLowerCase());
-          var morpheme = removePunc(morphemes[i].toLowerCase());
+          // Remove punctuation, make lower case, and replace all "Latin Letter
+          // Small Schwa" characters with "Latin Letter Smal E" characters, so
+          // there is just one schwa character in the corpus. 
+          var morpheme =
+            removePunc(morphemes[i].toLowerCase().replace(/\u0259/g,'\u01DD'))
+         
           if (gloss.match(/^[0-9]*$/)){
             continue
           }
