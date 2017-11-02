@@ -62,6 +62,8 @@ $ git clone https://github.com/sande570/Moro-database.git
 $ cd Moro-database/
 $ python -m SimpleHTTPServer
 ```
+If you are running python 3, you may receive an error on the last line. If so, try typing `python -m http.server` instead. 
+
 Navigate to http://localhost:8000 in a browser. This is a version of the website running from your computer.
 
 Use some source code text editor (Vim, Emacs, TextMate, Sublime, etc) to edit ~/Moro-database/moroScript.jsx and refresh the page to see your changes.
