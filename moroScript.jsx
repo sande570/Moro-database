@@ -863,7 +863,7 @@
           return   <div className='ui text container'> 
 
 				
-          		<h1 className='ui dividing header'>Moro Language Stories</h1>
+          		<h1 className='ui dividing header'>Moro Story Corpus</h1>
 
               <img className="ui medium right floated rounded image" src="./images/Nuba-berge.jpg"></img>
           
@@ -905,11 +905,157 @@
 //=========================GLOSS PAGE===============================
           return   <div className='ui text container'> 
 
-				
-          		<h1 className='ui dividing header'>Glossing Info</h1>
+				The abbreviations below are used for glossing in the Moro texts and Moro concordance.
 
-          <p>Glossy McGlossface. Glosserson GlossyWass</p> 
-          </div>
+          		<h1 className='ui dividing header'>Abbreviations</h1>
+
+                <div className='ui two column left aligned grid'>
+                  <div className='two wide column'>1sg</div>
+                  <div className='fourteen wide column'>1st person singular subject agreement</div>
+                  <div className='two wide column'>1du</div>
+                  <div className='fourteen wide column'>1st person dual inclusive subject agreement</div>
+                  <div className='two wide column'>1in</div>
+                  <div className='fourteen wide column'>1st person plural inclusive subject agreement</div>
+                  <div className='two wide column'>1ex</div>
+                  <div className='fourteen wide column'>1st person plural exclusive subject agreement</div>
+                  <div className='two wide column'>2sg</div>
+                  <div className='fourteen wide column'>2nd person singular subject agreement</div>
+                  <div className='two wide column'>2sg.inf</div>
+                  <div className='fourteen wide column'>Infinitive 2nd person singular subject agreement</div>
+                  <div className='two wide column'>2pl</div>
+                  <div className='fourteen wide column'>2nd person plural subject agreement</div>
+                  <div className='two wide column'>3sg.inf</div>
+                  <div className='fourteen wide column'>Infinitive 3rd person singular subject agreement</div>
+                  <div className='two wide column'>acc</div>
+                  <div className='fourteen wide column'>Accusative case</div>
+                  <div className='two wide column'>ap</div>
+                  <div className='fourteen wide column'>Antipassive</div>
+                  <div className='two wide column'>appl</div>
+                  <div className='fourteen wide column'>Applicative</div>
+                  <div className='two wide column'>assoc.pl</div>
+                  <div className='fourteen wide column'>Associative plural</div>
+                  <div className='two wide column'>be.rt</div>
+                  <div className='fourteen wide column'>Predicative copula</div>
+                  <div className='two wide column'>be.loc</div>
+                  <div className='fourteen wide column'>Locative copula</div>
+                  <div className='two wide column'>be.1d</div>
+                  <div className='fourteen wide column'>Deictic copula: be here</div>
+                  <div className='two wide column'>be.2d</div>
+                  <div className='fourteen wide column'>Deictic copula: be there</div>
+                  <div className='two wide column'>be.3d</div>
+                  <div className='fourteen wide column'>Deictic copula: be yonder</div>
+                  <div className='two wide column'>be.eq</div>
+                  <div className='fourteen wide column'>Equative copula</div>
+                  <div className='two wide column'>appl</div>
+                  <div className='fourteen wide column'>Applicative</div>
+                  <div className='two wide column'>caus</div>
+                  <div className='fourteen wide column'>Causative</div>
+                  <div className='two wide column'>clg</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class g (sg/pl)</div>
+                  <div className='two wide column'>cll</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class l (sg/pl)</div>
+                  <div className='two wide column'>cly</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class n (pl)</div>
+                  <div className='two wide column'>clŋ</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class ŋ (sg/pl)</div>
+                  <div className='two wide column'>clɲ</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class ɲ (pl)</div>
+                  <div className='two wide column'>clr</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class r (pl)</div>
+                  <div className='two wide column'>clð</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class ð (sg)</div>
+                  <div className='two wide column'>clð.nom</div>
+                  <div className='fourteen wide column'>Nominalization prefix: class ð</div>
+                  <div className='two wide column'>cly</div>
+                  <div className='fourteen wide column'>Noun class agreement/concord: class y (sg/pl)</div>
+                  <div className='two wide column'>cmp</div>
+                  <div className='fourteen wide column'>Comparative</div>
+                  <div className='two wide column'>comp1</div>
+                  <div className='fourteen wide column'>Finite complementizer</div>
+                  <div className='two wide column'>comp1b</div>
+                  <div className='fourteen wide column'>Consecutive imperfective complementizer</div>
+                  <div className='two wide column'>comp2</div>
+                  <div className='fourteen wide column'>Infinitive and consecutive perfective complementizer</div>
+                  <div className='two wide column'>cmp</div>
+                  <div className='fourteen wide column'>Comparative</div>
+                  <div className='two wide column'>d.ipfv</div>
+                  <div className='fourteen wide column'>Distal imperfective</div>
+                  <div className='two wide column'>d.inf1</div>
+                  <div className='fourteen wide column'>Distal infinitive 1</div>
+                  <div className='two wide column'>d.inf2</div>
+                  <div className='fourteen wide column'>Distal infinitive 2</div>
+                  <div className='two wide column'>d.imp</div>
+                  <div className='fourteen wide column'>Distal imperative</div>
+                  <div className='two wide column'>dpc</div>
+                  <div className='fourteen wide column'>Finite dependent clause vowel</div>
+                  <div className='two wide column'>foc</div>
+                  <div className='fourteen wide column'>Focus cleft</div>
+                  <div className='two wide column'>fut.aux</div>
+                  <div className='fourteen wide column'>Future auxiliary</div>
+                  <div className='two wide column'>imp</div>
+                  <div className='fourteen wide column'>Imperative</div>
+                  <div className='two wide column'>indef</div>
+                  <div className='fourteen wide column'>Indefinite</div>
+                  <div className='two wide column'>inf1</div>
+                  <div className='fourteen wide column'>Infinitive 1</div>
+                  <div className='two wide column'>inf2</div>
+                  <div className='fourteen wide column'>Infinitive 2</div>
+                  <div className='two wide column'>inst</div>
+                  <div className='fourteen wide column'>Instrumental clitic</div>
+                  <div className='two wide column'>ipfv</div>
+                  <div className='fourteen wide column'>Imperfective</div>
+                  <div className='two wide column'>iter</div>
+                  <div className='fourteen wide column'>Iterative/durative aspect</div>
+                  <div className='two wide column'>juss</div>
+                  <div className='fourteen wide column'>Jussive</div>
+                  <div className='two wide column'>loc</div>
+                  <div className='fourteen wide column'>Locative</div>
+                  <div className='two wide column'>loc.appl</div>
+                  <div className='fourteen wide column'>Locative applicative</div>
+                  <div className='two wide column'>not.aux</div>
+                  <div className='fourteen wide column'>Negative auxiliary</div>
+                  <div className='two wide column'>om</div>
+                  <div className='fourteen wide column'>Object marker (object pronouns)</div>
+                  <div className='two wide column'>pass</div>
+                  <div className='fourteen wide column'>Passive</div>
+                  <div className='two wide column'>past.aux</div>
+                  <div className='fourteen wide column'>Past tense auxiliary</div>
+                  <div className='two wide column'>pfv</div>
+                  <div className='fourteen wide column'>Perfective</div>
+                  <div className='two wide column'>plz</div>
+                  <div className='fourteen wide column'>Politeness marker</div>
+                  <div className='two wide column'>poss</div>
+                  <div className='fourteen wide column'>Possessive/genitive</div>
+                  <div className='two wide column'>pro</div>
+                  <div className='fourteen wide column'>Pronoun</div>
+                  <div className='two wide column'>prog</div>
+                  <div className='fourteen wide column'>Progressive</div>
+                  <div className='two wide column'>prog.aux</div>
+                  <div className='fourteen wide column'>Progressive auxiliary</div>
+                  <div className='two wide column'>rtc</div>
+                  <div className='fourteen wide column'>Finite root clause vowel</div>
+                  <div className='two wide column'>sclg</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class g (sg/pl)</div>
+                  <div className='two wide column'>scll</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class l (sg/pl)</div>
+                  <div className='two wide column'>scly</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class n (pl)</div>
+                  <div className='two wide column'>sclŋ</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class ŋ (sg/pl)</div>
+                  <div className='two wide column'>sclɲ</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class ɲ (pl)</div>
+                  <div className='two wide column'>sclr</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class r (pl)</div>
+                  <div className='two wide column'>sclð</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class ð (sg)</div>
+                  <div className='two wide column'>scly</div>
+                  <div className='fourteen wide column'>Strong (definite) noun class concord: class y (sg/pl)</div>
+                  <div className='two wide column'>way</div>
+                  <div className='fourteen wide column'>Manner clitic suffix</div>
+                  <div className='two wide column'>ynq</div>
+                  <div className='fourteen wide column'>Yes/no question marker</div>
+                </div>
+            </div>
           }
          }
       )
@@ -1057,16 +1203,38 @@
                 <Link className='item' to='Texts' >Texts</Link>
                 <Link className='item' to='Dictionary' >Concordance</Link>
                 <Link className='item' to='Search' >Search</Link>
-              </div>
             <Link to='Glosses' className='right item' ref='glossingPopupActivator'>Glossing
                 <i className="dropdown icon"></i>
             </Link>
-            <div ref='glossingPopup' className='ui popup bottom left transition hidden'>
-                <div className='ui three column center aligned grid'>
-                  <div className='column'>1</div>
-                  <div className='column'>2</div>
-                  <div className='column'>3</div>
+            <div ref='glossingPopup' className='ui small popup bottom left transition hidden'>
+                <div className='ui two column center aligned grid'>
+                	<div className='row'>
+	                  <Link to='Glosses'><div className='ui top attached button'>click for complete list</div></Link>
+                  	</div>
+                  <div className='three wide column'>appl</div>
+                  <div className='thirteen wide column'>Applicative</div>
+                  <div className='three wide column'>clX</div>
+                  <div className='thirteen wide column'>Noun class X agreement</div>
+                  <div className='three wide column'>d</div>
+                  <div className='thirteen wide column'>Distal</div>
+                  <div className='three wide column'>comp</div>
+                  <div className='thirteen wide column'>Complementizer</div>
+                  <div className='three wide column'>cons</div>
+                  <div className='thirteen wide column'>Consecutive</div>
+                  <div className='three wide column'>dpc</div>
+                  <div className='thirteen wide column'>Dependent clause vowel</div>
+                  <div className='three wide column'>ipfv</div>
+                  <div className='thirteen wide column'>Imperfective</div>
+                  <div className='three wide column'>inf</div>
+                  <div className='thirteen wide column'>Infinitive</div>
+                  <div className='three wide column'>pass</div>
+                  <div className='thirteen wide column'>Passive</div>
+                  <div className='three wide column'>pfv</div>
+                  <div className='thirteen wide column'>Perfective</div>
+                  <div className='three wide column'>rtc</div>
+                  <div className='thirteen wide column'>Finite root clause vowel</div>
                 </div>
+              </div>
             </div>
           </div>
            		<div className='ui borderless secondary menu' styleName='position: fixed; top: 0px; left: auto; z-index: 1;'>
