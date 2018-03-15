@@ -13,27 +13,19 @@
       var Route = ReactRouter.Route;
 
       // These are endpoints to load data from.
-      // Currently point to cloudant replication of lingsync data.
-      // On cloudant we have a clean data view that doesn't exist on lingsync.
+      // Loaded from static files in the repository rather than from lingsync.
 
-      // Endpoint for all up-to-date sentence data from all stories.
-      var sentence_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_sentences';
+      // Static file with sentences.
+      var sentence_url = 'sentences.json';
 
-      // Uncomment the following line for stale data, but a quick development cycle:
-      //var sentence_url = 'sentences.json';
-
-      // Endpoint mapping story id to story name
-      var story_url = 'https://sande570.cloudant.com/psejenks-moro/_design/views_for_website/_view/clean_stories';
-
-      // Uncomment the following line for stale data, but a quick development cycle:
-      //var story_url = 'stories.json';
+      // Static file with stories.
+      var story_url = 'stories.json';
 
       // Promise that is resolved once the sentence data is loaded
       var raw_data_promise = new Promise(function(resolve, reject) {
         $.ajax({
             url: sentence_url,
             dataType: 'json',
-            cache: false,
             success: function(d) {
               resolve(d);
             },
@@ -49,7 +41,6 @@
         $.ajax({
             url: story_url,
             dataType: 'json',
-            cache: false,
             success: function(d) {
               resolve(d);
             },
